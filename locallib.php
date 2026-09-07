@@ -694,6 +694,31 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
 
         // Otherwise we add some more information to the unavailable string.
     } else {
+        $now = time();
+        if ($zoom->recurring && $zoom->recurrence_type != ZOOM_RECURRINGTYPE_NOTIME) {
+            $starttime = zoom_get_next_occurrence($zoom);
+        } else {
+            $starttime = $zoom->start_time;
+        }
+
+        $displayformat = '%Y/%m/%d %H:%M';
+        $firstavailable = $starttime - ($config->firstabletojoin * 60);
+        $lastavailable = $starttime + $zoom->duration;
+        $timediffseconds = abs($starttime - $now);
+        $timediffkey = ($now <= $starttime) ? 'unavailabletimediffbefore' : 'unavailabletimediffafter';
+        $timediff = get_string($timediffkey, 'mod_zoom', [
+            'now' => userdate($now, $displayformat),
+            'diff' => format_time($timediffseconds),
+        ]);
+        $joinwindow = get_string('unavailablejoinwindow', 'mod_zoom', [
+            'from' => userdate($firstavailable, $displayformat),
+            'to' => userdate($lastavailable, $displayformat),
+        ]);
+        $joinpolicy = get_string('unavailablejoinpolicy', 'mod_zoom', [
+            'mins' => (int)$config->firstabletojoin,
+            'duration' => format_time($zoom->duration),
+        ]);
+
         // If we don't have the finished information yet, get it with a small overhead.
         if ($finished === null) {
             [$inprogress, $available, $finished] = zoom_get_state($zoom);
@@ -703,17 +728,24 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
         if ($finished !== true) {
             // If the admin wants to show the leadtime.
             if (!empty($config->displayleadtime) && $config->firstabletojoin > 0) {
-                $unavailabilitynote = $strunavailable . '<br />' .
-                        get_string('unavailablefirstjoin', 'mod_zoom', ['mins' => ($config->firstabletojoin)]);
+                $unavailabilitynote = $strunavailable . '<br />' . $joinpolicy .
+                    '<br />' . $joinwindow .
+                    '<br />' . $timediff;
 
                 // Otherwise.
             } else {
-                $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablenotstartedyet', 'mod_zoom');
+                $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablenotstartedyet', 'mod_zoom') .
+                    '<br />' . $joinpolicy .
+                    '<br />' . $joinwindow .
+                    '<br />' . $timediff;
             }
 
             // Otherwise, the meeting has finished.
         } else {
-            $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablefinished', 'mod_zoom');
+            $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablefinished', 'mod_zoom') .
+                    '<br />' . $joinpolicy .
+                    '<br />' . $joinwindow .
+                    '<br />' . $timediff;
         }
     }
 
