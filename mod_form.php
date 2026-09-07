@@ -612,16 +612,16 @@ class mod_zoom_mod_form extends moodleform_mod {
 
         // Add host/participants video options.
         $mform->addGroup([
-            $mform->createElement('radio', 'option_host_video', '', get_string('on', 'zoom'), true),
-            $mform->createElement('radio', 'option_host_video', '', get_string('off', 'zoom'), false),
+            $mform->createElement('radio', 'option_host_video', '', get_string('toggle_on', 'mod_zoom'), '1'),
+            $mform->createElement('radio', 'option_host_video', '', get_string('toggle_off', 'mod_zoom'), '0'),
         ], 'option_host_video_group', get_string('option_host_video', 'zoom'), null, false);
         $mform->setDefault('option_host_video', $config->defaulthostvideo);
         $mform->addHelpButton('option_host_video_group', 'option_host_video', 'zoom');
         $mform->disabledIf('option_host_video_group', 'webinar', 'checked');
 
         $mform->addGroup([
-            $mform->createElement('radio', 'option_participants_video', '', get_string('on', 'zoom'), true),
-            $mform->createElement('radio', 'option_participants_video', '', get_string('off', 'zoom'), false),
+            $mform->createElement('radio', 'option_participants_video', '', get_string('toggle_on', 'mod_zoom'), '1'),
+            $mform->createElement('radio', 'option_participants_video', '', get_string('toggle_off', 'mod_zoom'), '0'),
         ], 'option_participants_video_group', get_string('option_participants_video', 'zoom'), null, false);
         $mform->setDefault('option_participants_video', $config->defaultparticipantsvideo);
         $mform->addHelpButton('option_participants_video_group', 'option_participants_video', 'zoom');
