@@ -318,6 +318,22 @@ class mod_zoom_mod_form extends moodleform_mod {
         // Set default end_date_time to be 1 week in the future.
         $mform->setDefault('end_date_time', strtotime('+1 week'));
 
+        // Add first able to join setting (instance-level override for global config).
+        // Instance value must not exceed the global setting (site admin's configured maximum).
+        $jointimechoices = [0, 5, 10, 15, 20, 30, 45, 60];
+        $jointimeselect = [];
+        foreach ($jointimechoices as $minutes) {
+            // Only include values that do not exceed the global firstabletojoin setting.
+            if ($minutes <= $config->firstabletojoin) {
+                $jointimeselect[$minutes] = $minutes . ' ' . get_string('mins');
+            }
+        }
+        // Add a default option that uses the global setting.
+        $jointimeselect = [-1 => get_string('defaultfirstabletojoin', 'mod_zoom', $config->firstabletojoin)] + $jointimeselect;
+        $mform->addElement('select', 'firstabletojoin', get_string('firstjoin', 'mod_zoom'), $jointimeselect);
+        $mform->setDefault('firstabletojoin', -1);
+        $mform->addHelpButton('firstabletojoin', 'firstjoin_instance', 'mod_zoom');
+
         // Supplementary feature: Webinars.
         // Only show if the admin did not disable this feature completely.
         if ($config->showwebinars != ZOOM_WEBINAR_DISABLE) {
@@ -982,6 +998,11 @@ class mod_zoom_mod_form extends moodleform_mod {
                 $data->registration = ZOOM_REGISTRATION_OFF;
             }
         }
+
+        // Convert firstabletojoin from -1 (meaning "use global default") to null for database storage.
+        if (isset($data->firstabletojoin) && $data->firstabletojoin < 0) {
+            $data->firstabletojoin = null;
+        }
     }
 
     /**
@@ -1033,6 +1054,11 @@ class mod_zoom_mod_form extends moodleform_mod {
                 }
             }
         }
+
+        // Convert firstabletojoin from null (meaning "use global default") back to -1 for form display.
+        if (array_key_exists('firstabletojoin', $defaultvalues) && $defaultvalues['firstabletojoin'] === null) {
+            $defaultvalues['firstabletojoin'] = -1;
+        }
     }
 
     /**
@@ -1075,6 +1101,11 @@ class mod_zoom_mod_form extends moodleform_mod {
             } else if ($data['duration'] > 150 * 60 * 60) {
                 $errors['duration'] = get_string('err_duration_too_long', 'zoom');
             }
+        }
+
+        // Make sure firstabletojoin does not exceed the global setting.
+        if (isset($data['firstabletojoin']) && $data['firstabletojoin'] >= 0 && $data['firstabletojoin'] > $config->firstabletojoin) {
+            $errors['firstabletojoin'] = get_string('err_firstabletojoin_exceeds_global', 'mod_zoom');
         }
 
         if (!empty($data['requirepasscode']) && empty($data['meetingcode'])) {

@@ -1024,5 +1024,19 @@ function xmldb_zoom_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2025050900, 'zoom');
     }
 
+    if ($oldversion < 2026091600) {
+        // Define field firstabletojoin to be added to zoom.
+        $table = new xmldb_table('zoom');
+        $field = new xmldb_field('firstabletojoin', XMLDB_TYPE_INTEGER, '4', null, null, null, null, 'registration');
+
+        // Conditionally launch add field firstabletojoin.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Zoom savepoint reached.
+        upgrade_mod_savepoint(true, 2026091600, 'zoom');
+    }
+
     return true;
 }

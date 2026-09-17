@@ -357,8 +357,11 @@ function zoom_get_state($zoom) {
     }
 
     // Calculate the time when the recurring meeting becomes available next,
-    // based on the next occurrence start time and the general meeting lead time.
-    $firstavailable = $starttime - ($config->firstabletojoin * 60);
+    // based on the next occurrence start time and the meeting lead time.
+    // Use instance-level firstabletojoin if set, otherwise fall back to global config.
+    $instancefirstabletojoin = $zoom->firstabletojoin ?? -1;
+    $firstabletojoin = ($instancefirstabletojoin >= 0) ? $instancefirstabletojoin : $config->firstabletojoin;
+    $firstavailable = $starttime - ($firstabletojoin * 60);
 
     // Calculate the time when the meeting ends to be available,
     // based on the next occurrence start time and the meeting duration.
@@ -702,7 +705,10 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
         }
 
         $displayformat = '%Y/%m/%d %H:%M';
-        $firstavailable = $starttime - ($config->firstabletojoin * 60);
+        // Use instance-level firstabletojoin if set, otherwise fall back to global config.
+        $instancefirstabletojoin = $zoom->firstabletojoin ?? -1;
+        $firstabletojoin = ($instancefirstabletojoin >= 0) ? $instancefirstabletojoin : $config->firstabletojoin;
+        $firstavailable = $starttime - ($firstabletojoin * 60);
         $lastavailable = $starttime + $zoom->duration;
         $timediffseconds = abs($starttime - $now);
         $timediffkey = ($now <= $starttime) ? 'unavailabletimediffbefore' : 'unavailabletimediffafter';
@@ -715,7 +721,7 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
             'to' => userdate($lastavailable, $displayformat),
         ]);
         $joinpolicy = get_string('unavailablejoinpolicy', 'mod_zoom', [
-            'mins' => (int)$config->firstabletojoin,
+            'mins' => (int)$firstabletojoin,
             'duration' => format_time($zoom->duration),
         ]);
 
@@ -727,7 +733,7 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
         // If this meeting is still pending.
         if ($finished !== true) {
             // If the admin wants to show the leadtime.
-            if (!empty($config->displayleadtime) && $config->firstabletojoin > 0) {
+            if (!empty($config->displayleadtime) && $firstabletojoin > 0) {
                 $unavailabilitynote = $strunavailable . '<br />' . $joinpolicy .
                     '<br />' . $joinwindow .
                     '<br />' . $timediff;

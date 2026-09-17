@@ -47,6 +47,7 @@
         <FIELD NAME="show_media" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Show Media heading in activity page"/>
         <FIELD NAME="option_auto_recording" TYPE="char" LENGTH="5" NOTNULL="false" SEQUENCE="false" COMMENT="Auto record meeting."/>
         <FIELD NAME="registration" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="2" SEQUENCE="false" COMMENT="Force participants to register for the meeting/webinar"/>
+        <FIELD NAME="firstabletojoin" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false" COMMENT="Instance-level override for first able to join time (minutes before start). Null means use global default."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
