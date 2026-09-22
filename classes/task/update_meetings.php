@@ -110,6 +110,12 @@ class update_meetings extends scheduled_task {
         $calendarfields = ['intro', 'introformat', 'start_time', 'duration', 'recurring'];
 
         foreach ($zoomstoupdate as $zoom) {
+            // Skip external meetings (using manual meeting URL instead of Zoom API).
+            if (!empty($zoom->manualmeeting)) {
+                mtrace('  => Skipping external meeting (ID: ' . $zoom->id . ')');
+                continue;
+            }
+
             // Show trace message.
             mtrace('Processing next Zoom meeting activity ...');
             mtrace('  Zoom meeting ID: ' . $zoom->meeting_id);

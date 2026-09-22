@@ -178,6 +178,38 @@ class mod_zoom_mod_form extends moodleform_mod {
         // Add description 'intro' and 'introformat'.
         $this->standard_intro_elements();
 
+        // Adding the "meeting source" fieldset, where users can choose between automatic Zoom creation or external link.
+        $mform->addElement('header', 'meetingsourceheader', get_string('meetingsource', 'mod_zoom'));
+
+        $meetingsourceoptions = [
+            'auto' => get_string('meetingsource_auto', 'mod_zoom'),
+            'manual' => get_string('meetingsource_manual', 'mod_zoom'),
+        ];
+        $mform->addElement('select', 'meetingsource', get_string('meetingsource', 'mod_zoom'), $meetingsourceoptions);
+        $mform->setDefault('meetingsource', 'auto');
+        $mform->addHelpButton('meetingsource', 'meetingsource', 'mod_zoom');
+
+        $mform->addElement('text', 'meeting_url', get_string('externalmeetingurl', 'mod_zoom'), ['size' => '80']);
+        $mform->setType('meeting_url', PARAM_URL);
+        $mform->addHelpButton('meeting_url', 'externalmeetingurl', 'mod_zoom');
+        $mform->hideIf('meeting_url', 'meetingsource', 'noteq', 'manual');
+
+        // Hidden field to store the detected platform.
+        $mform->addElement('hidden', 'externalplatform', '');
+        $mform->setType('externalplatform', PARAM_ALPHANUMEXT);
+
+        // Hide Zoom-specific settings when using external meeting link.
+        $zoomfielsets = ['security', 'media', 'host', 'recording', 'regionrestriction', 'breakoutrooms'];
+        foreach ($zoomfielsets as $fieldset) {
+            $mform->hideIf($fieldset, 'meetingsource', 'eq', 'manual');
+        }
+
+        // Hide webinar and registration options when using external meeting link.
+        $mform->hideIf('webinar', 'meetingsource', 'eq', 'manual');
+        $mform->hideIf('registration', 'meetingsource', 'eq', 'manual');
+        // Also hide the webinar already set static element if present.
+        $mform->hideIf('webinaralreadyset', 'meetingsource', 'eq', 'manual');
+
         // Adding the "schedule" fieldset, where all settings relating to date and time are shown.
         $mform->addElement('header', 'schedule', get_string('schedule', 'mod_zoom'));
         $mform->setExpanded('schedule');
@@ -1084,6 +1116,17 @@ class mod_zoom_mod_form extends moodleform_mod {
             $defaultvalues['firstabletojoin'] = -1;
         }
 
+        // Populate external meeting fields for existing manual meetings.
+        if (isset($defaultvalues['manualmeeting']) && $defaultvalues['manualmeeting'] == 1) {
+            $defaultvalues['meetingsource'] = 'manual';
+            // Detect platform from URL server-side.
+            if (!empty($defaultvalues['meeting_url'])) {
+                $defaultvalues['externalplatform'] = zoom_detect_external_platform($defaultvalues['meeting_url']);
+            }
+        } else {
+            $defaultvalues['meetingsource'] = 'auto';
+        }
+
         // Decode region restriction country list from JSON to array for autocomplete display.
         if (isset($defaultvalues['regionrestrictionlist'])) {
             $decoded = json_decode($defaultvalues['regionrestrictionlist'], true);
@@ -1266,6 +1309,16 @@ class mod_zoom_mod_form extends moodleform_mod {
             $regionlist = $data['regionrestrictionlist'] ?? [];
             if (empty($regionlist) || (is_array($regionlist) && count(array_filter($regionlist)) === 0)) {
                 $errors['regionrestrictionlist'] = get_string('regionrestrictionrequired', 'mod_zoom');
+            }
+        }
+
+        // Validation for external meeting URL.
+        if (!empty($data['meetingsource']) && $data['meetingsource'] === 'manual') {
+            $meetingurl = trim($data['meeting_url'] ?? '');
+            if (empty($meetingurl)) {
+                $errors['meeting_url'] = get_string('required');
+            } else if (!zoom_validate_external_meeting_url($meetingurl)) {
+                $errors['meeting_url'] = get_string('externalmeetingurlinvalid', 'mod_zoom');
             }
         }
 

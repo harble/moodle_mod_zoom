@@ -129,6 +129,25 @@ function zoom_add_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) {
         $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
     }
 
+    // Handle external meeting URL.
+    $isManual = !empty($zoom->meetingsource) && $zoom->meetingsource === 'manual';
+    $zoom->manualmeeting = $isManual ? 1 : 0;
+    if ($isManual) {
+        $zoom->meeting_url = trim($zoom->meeting_url ?? '');
+        // Always detect platform from URL server-side, overriding any JS-set value.
+        $zoom->externalplatform = zoom_detect_external_platform($zoom->meeting_url);
+        $zoom->id = $DB->insert_record('zoom', $zoom);
+        zoom_calendar_item_update($zoom);
+        zoom_grade_item_update($zoom);
+
+        return $zoom->id;
+    } else {
+        // Ensure clean state when switching from manual back to auto.
+        $zoom->manualmeeting = 0;
+        $zoom->meeting_url = '';
+        $zoom->externalplatform = '';
+    }
+
     $zoom->id = $DB->insert_record('zoom', $zoom);
     if (!empty($zoom->breakoutrooms)) {
         // We ignore the API response and save the local data for breakout rooms to support dynamic users and groups.
@@ -188,7 +207,27 @@ function zoom_update_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) 
         $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
     }
 
+    // Handle external meeting URL.
+    $isManual = !empty($zoom->meetingsource) && $zoom->meetingsource === 'manual';
+    $zoom->manualmeeting = $isManual ? 1 : 0;
+    if ($isManual) {
+        $zoom->meeting_url = trim($zoom->meeting_url ?? '');
+        // Always detect platform from URL server-side, overriding any JS-set value.
+        $zoom->externalplatform = zoom_detect_external_platform($zoom->meeting_url);
+    } else {
+        $zoom->manualmeeting = 0;
+        $zoom->meeting_url = '';
+        $zoom->externalplatform = '';
+    }
+
     $DB->update_record('zoom', $zoom);
+
+    // If using external meeting URL, skip Zoom API calls.
+    if ($isManual) {
+        zoom_calendar_item_update($zoom);
+        zoom_grade_item_update($zoom);
+        return true;
+    }
 
     $zoom->breakoutrooms = [];
     if (!empty($zoom->rooms)) {
@@ -200,6 +239,19 @@ function zoom_update_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) 
     $updatedzoomrecord = $DB->get_record('zoom', ['id' => $zoom->id]);
     $zoom->meeting_id = $updatedzoomrecord->meeting_id;
     $zoom->webinar = $updatedzoomrecord->webinar;
+
+    // Handle switching from manual to auto: if no meeting_id on Zoom, create a new meeting.
+    if (empty($zoom->meeting_id)) {
+        // Need to create a new meeting on Zoom.
+        $response = zoom_webservice()->create_meeting($zoom, $zoom->coursemodule);
+        $zoom = populate_zoom_from_response($zoom, $response);
+        $zoom->timemodified = time();
+        $DB->update_record('zoom', $zoom);
+
+        zoom_calendar_item_update($zoom);
+        zoom_grade_item_update($zoom);
+        return true;
+    }
 
     // Update meeting on Zoom.
     try {
@@ -391,7 +443,7 @@ function zoom_delete_instance($id) {
     }
 
     // If the meeting is missing from zoom, don't bother with the webservice.
-    if ($zoom->exists_on_zoom == ZOOM_MEETING_EXISTS) {
+    if ($zoom->exists_on_zoom == ZOOM_MEETING_EXISTS && empty($zoom->manualmeeting)) {
         try {
             zoom_webservice()->delete_meeting($zoom->meeting_id, $zoom->webinar);
         } catch (\mod_zoom\not_found_exception $error) {

@@ -517,3 +517,15 @@ $string['zoomerr_usernotfound'] = '无法在 Zoom 上找到你的账户。若你
 $string['zoomurl_desc'] = '';
 $string['reportparticipants'] = '人数';
 $string['reportparticipantname'] = '参与者姓名';
+
+// External meeting link.
+$string['meetingsource'] = '会议来源';
+$string['meetingsource_help'] = '选择是自动在 Zoom 上创建会议，还是使用受支持平台的外部会议链接。';
+$string['meetingsource_auto'] = '在 Zoom 上创建会议';
+$string['meetingsource_manual'] = '使用外部会议链接';
+$string['externalmeetingurl'] = '外部会议 URL';
+$string['externalmeetingurl_help'] = '粘贴外部会议的完整加入链接。支持的平台包括 Zoom、Microsoft Teams、Google Meet、Webex、GoToMeeting、Jitsi Meet、腾讯会议、钉钉和 Amazon Chime。链接必须使用 HTTPS 协议。';
+$string['externalmeetingurlinvalid'] = '外部会议链接无效。请输入受支持的会议平台的有效 HTTPS 链接。';
+
+$string['externalmeeting'] = '此会议使用外部链接';
+$string['externalmeetinginfo'] = '此会议使用外部链接（{$a}），请点击下方按钮加入。';

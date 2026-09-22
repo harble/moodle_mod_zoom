@@ -993,6 +993,28 @@ function zoom_load_meeting($id, $context, $usestarturl = true) {
 
     $returns = ['nexturl' => null, 'error' => null];
 
+    // If using external meeting URL, redirect directly to it.
+    if (!empty($zoom->manualmeeting) && !empty($zoom->meeting_url)) {
+        $returns['nexturl'] = new moodle_url($zoom->meeting_url);
+
+        // Record user's clicking join.
+        \mod_zoom\event\join_meeting_button_clicked::create([
+            'context' => $context,
+            'objectid' => $zoom->id,
+            'other' => [
+                'cmid' => $id,
+                'meetingid' => 0,
+                'userishost' => false,
+            ],
+        ])->trigger();
+
+        // Track completion viewed.
+        $completion = new completion_info($course);
+        $completion->set_module_viewed($cm);
+
+        return $returns;
+    }
+
     [$inprogress, $available, $finished] = zoom_get_state($zoom);
 
     $userisregistered = false;
@@ -1408,4 +1430,133 @@ function zoom_get_user_display_name($zoomuserid) {
     } catch (moodle_exception $error) {
         return null;
     }
+}
+
+/**
+ * Define supported external meeting platforms (whitelist) and their URL patterns.
+ *
+ * @return array Associative array of platform keys => ['name' => display name, 'patterns' => [host patterns]]
+ */
+function zoom_get_supported_external_platforms() {
+    return [
+        'zoom' => [
+            'name' => 'Zoom',
+            'patterns' => ['zoom.us', 'zoom.com.cn', 'zoom.us/j/'],
+        ],
+        'teams' => [
+            'name' => 'Microsoft Teams',
+            'patterns' => ['teams.microsoft.com'],
+        ],
+        'googlemeet' => [
+            'name' => 'Google Meet',
+            'patterns' => ['meet.google.com'],
+        ],
+        'webex' => [
+            'name' => 'Webex',
+            'patterns' => ['webex.com'],
+        ],
+        'chime' => [
+            'name' => 'Amazon Chime',
+            'patterns' => ['chime.aws'],
+        ],
+        'gotomeeting' => [
+            'name' => 'GoToMeeting',
+            'patterns' => ['goto.com', 'gotomeeting.com'],
+        ],
+        'jitsi' => [
+            'name' => 'Jitsi Meet',
+            'patterns' => ['meet.jit.si'],
+        ],
+        'tencent' => [
+            'name' => 'Tencent Meeting',
+            'patterns' => ['meeting.tencent.com'],
+        ],
+        'dingtalk' => [
+            'name' => 'DingTalk',
+            'patterns' => ['meeting.dingtalk.com'],
+        ],
+    ];
+}
+
+/**
+ * Detect the external meeting platform from a URL.
+ *
+ * @param string $url The external meeting URL.
+ * @return string The platform key (e.g. 'zoom', 'teams'), or 'unknown' if not recognized.
+ */
+function zoom_detect_external_platform($url) {
+    $url = trim($url);
+    if (empty($url)) {
+        return '';
+    }
+
+    // Parse URL to get hostname.
+    $parsed = parse_url($url);
+    if (!$parsed || !isset($parsed['host'])) {
+        return 'unknown';
+    }
+
+    $host = strtolower($parsed['host']);
+
+    $platforms = zoom_get_supported_external_platforms();
+    foreach ($platforms as $key => $platform) {
+        foreach ($platform['patterns'] as $pattern) {
+            // Check if the hostname contains the pattern.
+            if (strpos($host, strtolower($pattern)) !== false) {
+                return $key;
+            }
+        }
+    }
+
+    return 'unknown';
+}
+
+/**
+ * Validate an external meeting URL against the supported platform whitelist.
+ *
+ * @param string $url The external meeting URL to validate.
+ * @return bool True if the URL is valid and uses a supported platform or HTTPS protocol.
+ */
+function zoom_validate_external_meeting_url($url) {
+    $url = trim($url);
+    if (empty($url)) {
+        return false;
+    }
+
+    // Must start with https://.
+    if (strpos($url, 'https://') !== 0) {
+        return false;
+    }
+
+    $parsed = parse_url($url);
+    if (!$parsed || !isset($parsed['host'])) {
+        return false;
+    }
+
+    // Must have a path or query (i.e., not just a domain).
+    if (empty($parsed['path']) || $parsed['path'] === '/' || $parsed['path'] === '') {
+        return false;
+    }
+
+    // Check against supported platform whitelist.
+    $platform = zoom_detect_external_platform($url);
+    if ($platform === 'unknown') {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Get the human-readable display name for an external platform key.
+ *
+ * @param string $platformkey The platform key (e.g. 'zoom', 'teams').
+ * @return string The display name, or the key itself if not found.
+ */
+function zoom_get_external_platform_display_name($platformkey) {
+    $platforms = zoom_get_supported_external_platforms();
+    if (isset($platforms[$platformkey])) {
+        return $platforms[$platformkey]['name'];
+    }
+    return ucfirst($platformkey);
 }

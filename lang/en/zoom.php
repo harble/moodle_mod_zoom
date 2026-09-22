@@ -516,3 +516,15 @@ $string['zoomurl'] = 'Zoom home page URL';
 $string['zoomurl_desc'] = '';
 $string['reportparticipants'] = 'Participants';
 $string['reportparticipantname'] = 'Participant Name';
+
+// External meeting link.
+$string['meetingsource'] = 'Meeting source';
+$string['meetingsource_help'] = 'Choose whether to create a meeting on Zoom automatically or use an external meeting URL from a supported platform.';
+$string['meetingsource_auto'] = 'Create meeting on Zoom';
+$string['meetingsource_manual'] = 'Use external meeting link';
+$string['externalmeetingurl'] = 'External meeting URL';
+$string['externalmeetingurl_help'] = 'Paste the full join URL of an external meeting. Supported platforms include Zoom, Microsoft Teams, Google Meet, Webex, GoToMeeting, Jitsi Meet, Tencent Meeting, DingTalk, and Amazon Chime. The URL must use HTTPS.';
+$string['externalmeetingurlinvalid'] = 'The external meeting URL is invalid. Please enter a valid HTTPS URL from a supported meeting platform.';
+
+$string['externalmeeting'] = 'This meeting uses an external link';
+$string['externalmeetinginfo'] = 'This meeting uses an external link ({$a}). Click the button below to join.';

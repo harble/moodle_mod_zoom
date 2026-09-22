@@ -51,6 +51,9 @@
         <FIELD NAME="regionrestrictionenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Enable country/region access restriction for this meeting."/>
         <FIELD NAME="regionrestrictionmethod" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="deny" SEQUENCE="false" COMMENT="Restriction method: deny (block listed) or approve (allow only listed)."/>
         <FIELD NAME="regionrestrictionlist" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON array of ISO 3166-1 alpha-2 country codes for access restriction."/>
+        <FIELD NAME="manualmeeting" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether to use an external meeting URL instead of creating a meeting on Zoom."/>
+        <FIELD NAME="meeting_url" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="External meeting URL, used when manualmeeting is enabled."/>
+        <FIELD NAME="externalplatform" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="Auto-detected external meeting platform (e.g. zoom, teams, googlemeet)."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

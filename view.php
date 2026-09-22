@@ -218,9 +218,44 @@ if (!$showrecreate && $config->showcapacitywarning == true) {
 // Get meeting state from Zoom.
 [$inprogress, $available, $finished] = zoom_get_state($zoom);
 
+// For external meetings, show info with clickable URL and handle availability.
+$isexternalmeeting = !empty($zoom->manualmeeting) && !empty($zoom->meeting_url);
+
 // Show join meeting button or unavailability note.
 if (!$showrecreate) {
-    if ($userishost) {
+    if ($isexternalmeeting) {
+        // Show external meeting info with clickable URL.
+        $platformname = zoom_get_external_platform_display_name($zoom->externalplatform);
+        $urllink = html_writer::link($zoom->meeting_url, $zoom->meeting_url, ['target' => '_blank']);
+
+        // Build info text with platform name and clickable URL.
+        $externalinfohtml = '';
+        if (!empty($platformname)) {
+            $externalinfohtml .= get_string('externalmeeting', 'mod_zoom') . ' (' . $platformname . '):<br>';
+        } else {
+            $externalinfohtml .= get_string('externalmeeting', 'mod_zoom') . ':<br>';
+        }
+        $externalinfohtml .= $urllink;
+
+        $externalinfodiv = html_writer::div($externalinfohtml, 'alert alert-info');
+
+        if ($available) {
+            $btntext = $strjoin;
+            $buttonhtml = html_writer::tag('button', $btntext, ['type' => 'submit', 'class' => 'btn btn-primary']);
+            $aurl = new moodle_url('/mod/zoom/loadmeeting.php', ['id' => $cm->id]);
+            $buttonhtml .= html_writer::input_hidden_params($aurl);
+            $link = html_writer::tag('form', $buttonhtml, ['action' => $aurl->out_omit_querystring(), 'target' => '_blank']);
+        } else {
+            // Get unavailability note.
+            $unavailabilitynote = zoom_get_unavailability_note($zoom, $finished);
+            $link = html_writer::tag('div', $unavailabilitynote, ['class' => 'alert alert-primary']);
+        }
+
+        echo $OUTPUT->box_start('generalbox text-center');
+        echo $externalinfodiv;
+        echo $link;
+        echo $OUTPUT->box_end();
+    } else if ($userishost) {
         // Hosts are pre-registered.
         $userisregistered = true;
     } else if ($zoom->registration != ZOOM_REGISTRATION_OFF) {
@@ -257,9 +292,11 @@ if (!$showrecreate) {
         $link = html_writer::tag('div', $unavailabilitynote, ['class' => 'alert alert-primary']);
     }
 
-    echo $OUTPUT->box_start('generalbox text-center');
-    echo $link;
-    echo $OUTPUT->box_end();
+    if (!$isexternalmeeting) {
+        echo $OUTPUT->box_start('generalbox text-center');
+        echo $link;
+        echo $OUTPUT->box_end();
+    }
 }
 
 if ($zoom->show_schedule) {
@@ -309,6 +346,21 @@ if ($zoom->show_schedule) {
     $rowmeetingtime->cells = [$meetingtimeheader, $meetingtimetext];
     $table->data[] = $rowmeetingtime;
 
+    // Show external meeting source indicator.
+    if ($isexternalmeeting) {
+        $rowmeetingsource = new html_table_row();
+        $rowmeetingsource->id = 'zoom_schedule-meetingsource';
+        $meetingsourceheader = new html_table_cell(get_string('meetingsource', 'mod_zoom'));
+        $meetingsourceheader->header = true;
+        $platformname = zoom_get_external_platform_display_name($zoom->externalplatform);
+        $sourcetext = get_string('meetingsource_manual', 'mod_zoom');
+        if (!empty($platformname)) {
+            $sourcetext .= ' (' . $platformname . ')';
+        }
+        $rowmeetingsource->cells = [$meetingsourceheader, $sourcetext];
+        $table->data[] = $rowmeetingsource;
+    }
+
     // Show meeting duration.
     if (!$isrecurringnotime) {
         $rowduration = new html_table_row();
@@ -351,7 +403,22 @@ if ($zoom->show_schedule) {
     }
 
     // Show meeting status.
-    if ($zoom->exists_on_zoom == ZOOM_MEETING_EXPIRED) {
+    if ($isexternalmeeting && !$isrecurringnotime) {
+        // For external meetings, show time-based status like normal Zoom meetings.
+        if ($finished) {
+            $status = get_string('meeting_finished', 'mod_zoom');
+        } else if ($inprogress) {
+            $status = get_string('meeting_started', 'mod_zoom');
+        } else {
+            $status = get_string('meeting_not_started', 'mod_zoom');
+        }
+        $rowstatus = new html_table_row();
+        $rowstatus->id = 'zoom_schedule-status';
+        $statusheader = new html_table_cell($strstatus);
+        $statusheader->header = true;
+        $rowstatus->cells = [$statusheader, $status];
+        $table->data[] = $rowstatus;
+    } else if ($zoom->exists_on_zoom == ZOOM_MEETING_EXPIRED) {
         $status = get_string('meeting_nonexistent_on_zoom', 'mod_zoom');
     } else if (!$isrecurringnotime) {
         if ($finished) {
@@ -371,7 +438,7 @@ if ($zoom->show_schedule) {
 
     // Show host.
     $hostdisplayname = zoom_get_user_display_name($zoom->host_id);
-    if (isset($hostdisplayname)) {
+    if (isset($hostdisplayname) && !$isexternalmeeting) {
         $rowhost = new html_table_row();
         $rowhost->id = 'zoom_schedule-host';
         $hostheader = new html_table_cell($strhost);
@@ -381,7 +448,7 @@ if ($zoom->show_schedule) {
     }
 
     // Display alternate hosts if they exist and if the admin did not disable the feature.
-    if ($iszoommanager) {
+    if ($iszoommanager && !$isexternalmeeting) {
         if ($config->showalternativehosts != ZOOM_ALTERNATIVEHOSTS_DISABLE && !empty($zoom->alternative_hosts)) {
             // If the admin did show the alternative hosts user picker, we try to show the real names of the users here.
             $rowshowalternativehosts = new html_table_row();
@@ -434,7 +501,7 @@ if ($zoom->show_schedule) {
     }
 
     // Show sessions link to users with edit capability.
-    if ($iszoommanager) {
+    if ($iszoommanager && !$isexternalmeeting) {
         $sessionsurl = new moodle_url('/mod/zoom/report.php', ['id' => $cm->id]);
         $sessionslink = html_writer::link($sessionsurl, get_string('sessionsreport', 'mod_zoom'));
         $rowsessions = new html_table_row();
@@ -450,7 +517,7 @@ if ($zoom->show_schedule) {
     echo $OUTPUT->box_end();
 }
 
-if ($zoom->show_security) {
+if ($zoom->show_security && !$isexternalmeeting) {
     echo $OUTPUT->box_start('', 'zoom_section-security');
     // Output "Security" heading.
     echo $OUTPUT->heading(get_string('security', 'mod_zoom'), 3);
@@ -491,7 +558,11 @@ if ($zoom->show_security) {
         $rowjoinurl->id = 'zoom_security-joinurl';
         $joinurlheader = new html_table_cell($strjoinlink);
         $joinurlheader->header = true;
-        $rowjoinurl->cells = [$joinurlheader, html_writer::link($zoom->join_url, $zoom->join_url, ['target' => '_blank'])];
+        if ($isexternalmeeting) {
+            $rowjoinurl->cells = [$joinurlheader, html_writer::link($zoom->meeting_url, $zoom->meeting_url, ['target' => '_blank'])];
+        } else {
+            $rowjoinurl->cells = [$joinurlheader, html_writer::link($zoom->join_url, $zoom->join_url, ['target' => '_blank'])];
+        }
         $table->data[] = $rowjoinurl;
     }
 
@@ -545,7 +616,7 @@ if ($zoom->show_security) {
     echo $OUTPUT->box_end();
 }
 
-if ($zoom->show_media) {
+if ($zoom->show_media && !$isexternalmeeting) {
     echo $OUTPUT->box_start('', 'zoom_section-media');
     // Output "Media" heading.
     echo $OUTPUT->heading(get_string('media', 'mod_zoom'), 3);

@@ -1139,5 +1139,36 @@ function xmldb_zoom_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026092400, 'zoom');
     }
 
+    if ($oldversion < 2026092500) {
+        $table = new xmldb_table('zoom');
+
+        // Define field manualmeeting to be added to zoom table.
+        $field = new xmldb_field('manualmeeting', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'regionrestrictionlist');
+
+        // Conditionally launch add field manualmeeting.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field meeting_url to be added to zoom table.
+        $field = new xmldb_field('meeting_url', XMLDB_TYPE_TEXT, null, null, null, null, null, 'manualmeeting');
+
+        // Conditionally launch add field meeting_url.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field externalplatform to be added to zoom table.
+        $field = new xmldb_field('externalplatform', XMLDB_TYPE_CHAR, '50', null, null, null, null, 'meeting_url');
+
+        // Conditionally launch add field externalplatform.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Zoom savepoint reached.
+        upgrade_mod_savepoint(true, 2026092500, 'zoom');
+    }
+
     return true;
 }
