@@ -426,63 +426,6 @@ class mod_zoom_mod_form extends moodleform_mod {
         $mform->addHelpButton('registration', 'registration', 'mod_zoom');
         $mform->hideIf('registration', 'recurrence_type', 'eq', ZOOM_RECURRINGTYPE_NOTIME);
 
-        // Adding the "breakout rooms" fieldset.
-        if ($config->preassignbreakoutrooms) {
-            $mform->addElement('header', 'breakoutrooms', get_string('breakoutrooms', 'mod_zoom'));
-            $mform->setExpanded('breakoutrooms');
-
-            $courseid = $this->current->course;
-            $context = context_course::instance($courseid);
-
-            $groups = groups_get_all_groups($courseid);
-            $participants = get_enrolled_users($context);
-
-            // Getting Course participants.
-            $courseparticipants = [];
-            foreach ($participants as $participant) {
-                $courseparticipants[] = [
-                    'participantid' => $participant->id,
-                    'participantname' => fullname($participant) . ' <' . $participant->email . '>',
-                ];
-            }
-
-            // Getting Course groups.
-            $coursegroups = [];
-            foreach ($groups as $group) {
-                $coursegroups[] = ['groupid' => $group->id, 'groupname' => $group->name];
-            }
-
-            // Building meeting breakout rooms template data.
-            $templatedata = [
-                'rooms' => [],
-                'roomscount' => 0,
-                'roomtoclone' => [
-                    'toclone' => 'toclone',
-                    'courseparticipants' => $courseparticipants,
-                    'coursegroups' => $coursegroups,
-                ],
-            ];
-
-            $currentinstance = $this->current->instance;
-            if ($currentinstance) {
-                $rooms = zoom_build_instance_breakout_rooms_array_for_view($currentinstance, $courseparticipants, $coursegroups);
-
-                $templatedata['rooms'] = $rooms;
-                $templatedata['roomscount'] = count($rooms);
-            }
-
-            $mform->addElement('html', $OUTPUT->render_from_template('zoom/breakoutrooms_rooms', $templatedata));
-        }
-
-        $mform->addElement('hidden', 'rooms', '');
-        $mform->setType('rooms', PARAM_RAW);
-
-        $mform->addElement('hidden', 'roomsparticipants', '');
-        $mform->setType('roomsparticipants', PARAM_RAW);
-
-        $mform->addElement('hidden', 'roomsgroups', '');
-        $mform->setType('roomsgroups', PARAM_RAW);
-
         // Adding the "security" fieldset, where all settings relating to securing and protecting the meeting are shown.
         $mform->addElement('header', 'security', get_string('security', 'mod_zoom'));
         $mform->setExpanded('security');
@@ -807,6 +750,87 @@ class mod_zoom_mod_form extends moodleform_mod {
             $mform->addHelpButton('recordings_visible_default', 'recordingvisibility', 'mod_zoom');
         }
 
+        // Add country/region access restriction settings.
+        $mform->addElement('header', 'regionrestriction', get_string('regionrestriction', 'mod_zoom'));
+
+        $mform->addElement('checkbox', 'regionrestrictionenabled', get_string('regionrestrictionenabled', 'mod_zoom'));
+        $mform->setDefault('regionrestrictionenabled', 0);
+
+        $radioarray = [];
+        $radioarray[] = $mform->createElement('radio', 'regionrestrictionmethod', '', get_string('regionrestrictiondeny', 'mod_zoom'), 'deny');
+        $radioarray[] = $mform->createElement('radio', 'regionrestrictionmethod', '', get_string('regionrestrictionapprove', 'mod_zoom'), 'approve');
+        $mform->addGroup($radioarray, 'regionrestrictionmethodgroup', get_string('regionrestrictionmethod', 'mod_zoom'), ['<br>'], false);
+        $mform->setDefault('regionrestrictionmethod', 'deny');
+
+        // Country autocomplete.
+        $countries = get_string_manager()->get_list_of_countries();
+        $mform->addElement('autocomplete', 'regionrestrictionlist', get_string('regionrestrictionlist', 'mod_zoom'), $countries, [
+            'multiple' => true,
+            'placeholder' => get_string('regionrestrictionlist_help', 'mod_zoom'),
+        ]);
+        $mform->addHelpButton('regionrestrictionlist', 'regionrestrictionlist', 'mod_zoom');
+
+        // Hide restriction method and country list when region restriction is disabled.
+        $mform->hideIf('regionrestrictionmethodgroup', 'regionrestrictionenabled', 'notchecked');
+        $mform->hideIf('regionrestrictionlist', 'regionrestrictionenabled', 'notchecked');
+
+        // Adding the "breakout rooms" fieldset.
+        if ($config->preassignbreakoutrooms) {
+            $mform->addElement('header', 'breakoutrooms', get_string('breakoutrooms', 'mod_zoom'));
+            $mform->setExpanded('breakoutrooms');
+
+            $courseid = $this->current->course;
+            $context = context_course::instance($courseid);
+
+            $groups = groups_get_all_groups($courseid);
+            $participants = get_enrolled_users($context);
+
+            // Getting Course participants.
+            $courseparticipants = [];
+            foreach ($participants as $participant) {
+                $courseparticipants[] = [
+                    'participantid' => $participant->id,
+                    'participantname' => fullname($participant) . ' <' . $participant->email . '>',
+                ];
+            }
+
+            // Getting Course groups.
+            $coursegroups = [];
+            foreach ($groups as $group) {
+                $coursegroups[] = ['groupid' => $group->id, 'groupname' => $group->name];
+            }
+
+            // Building meeting breakout rooms template data.
+            $templatedata = [
+                'rooms' => [],
+                'roomscount' => 0,
+                'roomtoclone' => [
+                    'toclone' => 'toclone',
+                    'courseparticipants' => $courseparticipants,
+                    'coursegroups' => $coursegroups,
+                ],
+            ];
+
+            $currentinstance = $this->current->instance;
+            if ($currentinstance) {
+                $rooms = zoom_build_instance_breakout_rooms_array_for_view($currentinstance, $courseparticipants, $coursegroups);
+
+                $templatedata['rooms'] = $rooms;
+                $templatedata['roomscount'] = count($rooms);
+            }
+
+            $mform->addElement('html', $OUTPUT->render_from_template('zoom/breakoutrooms_rooms', $templatedata));
+        }
+
+        $mform->addElement('hidden', 'rooms', '');
+        $mform->setType('rooms', PARAM_RAW);
+
+        $mform->addElement('hidden', 'roomsparticipants', '');
+        $mform->setType('roomsparticipants', PARAM_RAW);
+
+        $mform->addElement('hidden', 'roomsgroups', '');
+        $mform->setType('roomsgroups', PARAM_RAW);
+
         // Add meeting id.
         $mform->addElement('hidden', 'meeting_id', -1);
         $mform->setType('meeting_id', PARAM_ALPHANUMEXT);
@@ -1059,6 +1083,16 @@ class mod_zoom_mod_form extends moodleform_mod {
         if (array_key_exists('firstabletojoin', $defaultvalues) && $defaultvalues['firstabletojoin'] === null) {
             $defaultvalues['firstabletojoin'] = -1;
         }
+
+        // Decode region restriction country list from JSON to array for autocomplete display.
+        if (isset($defaultvalues['regionrestrictionlist'])) {
+            $decoded = json_decode($defaultvalues['regionrestrictionlist'], true);
+            if (is_array($decoded)) {
+                $defaultvalues['regionrestrictionlist'] = $decoded;
+            } else if (empty($defaultvalues['regionrestrictionlist'])) {
+                $defaultvalues['regionrestrictionlist'] = [];
+            }
+        }
     }
 
     /**
@@ -1215,6 +1249,23 @@ class mod_zoom_mod_form extends moodleform_mod {
             // Check licensing of the user.
             if (!zoom_webservice()->is_user_permitted_to_require_registration()) {
                 $errors['registration'] = get_string('err_registration', 'mod_zoom');
+            }
+        }
+
+        // Validation for country/region access restriction.
+        if (!empty($data['regionrestrictionenabled'])) {
+            // Check that restriction method is valid.
+            if (
+                !isset($data['regionrestrictionmethod']) ||
+                !in_array($data['regionrestrictionmethod'], ['deny', 'approve'])
+            ) {
+                $errors['regionrestrictionmethodgroup'] = get_string('regionrestrictionmethodinvalid', 'mod_zoom');
+            }
+
+            // Check that at least one country is selected.
+            $regionlist = $data['regionrestrictionlist'] ?? [];
+            if (empty($regionlist) || (is_array($regionlist) && count(array_filter($regionlist)) === 0)) {
+                $errors['regionrestrictionlist'] = get_string('regionrestrictionrequired', 'mod_zoom');
             }
         }
 

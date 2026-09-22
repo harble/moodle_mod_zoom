@@ -797,6 +797,33 @@ class webservice {
         }
         $data['settings']['breakout_room'] = $breakoutroom;
 
+        // Add country/region access restriction.
+        // When enabled, send the restriction configuration to Zoom.
+        // When disabled, explicitly tell Zoom to clear any previously set restriction.
+        if (!empty($zoom->regionrestrictionenabled)) {
+            $regiondata = [
+                'enable' => true,
+                'method' => $zoom->regionrestrictionmethod,
+            ];
+
+            // Decode JSON if needed.
+            $countries = $zoom->regionrestrictionlist;
+            if (is_string($countries)) {
+                $countries = json_decode($countries, true) ?? [];
+            }
+
+            if ($zoom->regionrestrictionmethod === 'deny') {
+                $regiondata['denied_list'] = $countries;
+            } else {
+                $regiondata['approved_list'] = $countries;
+            }
+
+            $data['settings']['approved_or_denied_countries_or_regions'] = $regiondata;
+        } else if (property_exists($zoom, 'regionrestrictionenabled')) {
+            // Restriction explicitly disabled; tell Zoom to clear any previous restriction.
+            $data['settings']['approved_or_denied_countries_or_regions'] = ['enable' => false];
+        }
+
         return $data;
     }
 

@@ -48,6 +48,9 @@
         <FIELD NAME="option_auto_recording" TYPE="char" LENGTH="5" NOTNULL="false" SEQUENCE="false" COMMENT="Auto record meeting."/>
         <FIELD NAME="registration" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="2" SEQUENCE="false" COMMENT="Force participants to register for the meeting/webinar"/>
         <FIELD NAME="firstabletojoin" TYPE="int" LENGTH="4" NOTNULL="false" SEQUENCE="false" COMMENT="Instance-level override for first able to join time (minutes before start). Null means use global default."/>
+        <FIELD NAME="regionrestrictionenabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Enable country/region access restriction for this meeting."/>
+        <FIELD NAME="regionrestrictionmethod" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="deny" SEQUENCE="false" COMMENT="Restriction method: deny (block listed) or approve (allow only listed)."/>
+        <FIELD NAME="regionrestrictionlist" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON array of ISO 3166-1 alpha-2 country codes for access restriction."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

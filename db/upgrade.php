@@ -1109,5 +1109,35 @@ function xmldb_zoom_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026092300, 'zoom');
     }
 
+    if ($oldversion < 2026092400) {
+        // Define field regionrestrictionenabled to be added to zoom table.
+        $table = new xmldb_table('zoom');
+        $field = new xmldb_field('regionrestrictionenabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'firstabletojoin');
+
+        // Conditionally launch add field regionrestrictionenabled.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field regionrestrictionmethod to be added to zoom table.
+        $field = new xmldb_field('regionrestrictionmethod', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'deny', 'regionrestrictionenabled');
+
+        // Conditionally launch add field regionrestrictionmethod.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field regionrestrictionlist to be added to zoom table.
+        $field = new xmldb_field('regionrestrictionlist', XMLDB_TYPE_TEXT, null, null, null, null, null, 'regionrestrictionmethod');
+
+        // Conditionally launch add field regionrestrictionlist.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Zoom savepoint reached.
+        upgrade_mod_savepoint(true, 2026092400, 'zoom');
+    }
+
     return true;
 }

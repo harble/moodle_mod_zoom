@@ -121,6 +121,14 @@ function zoom_add_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) {
         throw new moodle_exception('erroraddinstance', 'zoom', $redirecturl->out());
     }
 
+    // Handle checkbox: unchecked checkbox does not submit any value, so default to 0.
+    $zoom->regionrestrictionenabled = !empty($zoom->regionrestrictionenabled) ? 1 : 0;
+
+    // Encode region restriction country list as JSON for database storage.
+    if (isset($zoom->regionrestrictionlist) && is_array($zoom->regionrestrictionlist)) {
+        $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
+    }
+
     $zoom->id = $DB->insert_record('zoom', $zoom);
     if (!empty($zoom->breakoutrooms)) {
         // We ignore the API response and save the local data for breakout rooms to support dynamic users and groups.
@@ -170,6 +178,14 @@ function zoom_update_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) 
     // Handle weekdays if weekly recurring meeting selected.
     if ($zoom->recurring && $zoom->recurrence_type == ZOOM_RECURRINGTYPE_WEEKLY) {
         $zoom->weekly_days = zoom_handle_weekly_days($zoom);
+    }
+
+    // Handle checkbox: unchecked checkbox does not submit any value, so default to 0.
+    $zoom->regionrestrictionenabled = !empty($zoom->regionrestrictionenabled) ? 1 : 0;
+
+    // Encode region restriction country list as JSON for database storage.
+    if (isset($zoom->regionrestrictionlist) && is_array($zoom->regionrestrictionlist)) {
+        $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
     }
 
     $DB->update_record('zoom', $zoom);
