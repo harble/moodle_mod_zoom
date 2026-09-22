@@ -126,6 +126,20 @@ $strmeetinginviteshow = get_string('meeting_invite_show', 'mod_zoom');
 // Output starts here.
 echo $OUTPUT->header();
 
+// Page-specific CSS for consistent section table styling.
+echo html_writer::tag('style', '
+    .zoom-section-table.generaltable {
+        max-width: 1000px;
+        width: 100%;
+    }
+    .zoom-section-table.generaltable .cell.c0 {
+        min-width: 110px;
+    }
+    .zoom-section-table.generaltable .btn.btn-primary {
+        padding-right: 21px;
+    }
+');
+
 if ($CFG->branch < '400') {
     echo $OUTPUT->heading(format_string($zoom->name), 2);
 }
@@ -255,7 +269,7 @@ if ($zoom->show_schedule) {
 
     // Start "Schedule" table.
     $table = new html_table();
-    $table->attributes['class'] = 'generaltable mod_view';
+    $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
     $table->size = ['35%', '65%'];
     $numcolumns = 2;
@@ -443,7 +457,7 @@ if ($zoom->show_security) {
 
     // Start "Security" table.
     $table = new html_table();
-    $table->attributes['class'] = 'generaltable mod_view';
+    $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
     $table->size = ['35%', '65%'];
     $numcolumns = 2;
@@ -538,7 +552,7 @@ if ($zoom->show_media) {
 
     // Start "Media" table.
     $table = new html_table();
-    $table->attributes['class'] = 'generaltable mod_view';
+    $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
     $table->size = ['35%', '65%'];
     $numcolumns = 2;
