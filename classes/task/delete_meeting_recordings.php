@@ -91,6 +91,12 @@ class delete_meeting_recordings extends scheduled_task {
         // Get all recordings stored in Moodle, grouped by meetinguuid.
         $zoomrecordings = zoom_get_meeting_recordings_grouped();
         foreach ($zoomrecordings as $meetinguuid => $recordings) {
+            // Skip manual recordings (grouped by 'manual_' prefix).
+            if (strpos($meetinguuid, 'manual_') === 0) {
+                mtrace('Skipping manual recording group: ' . $meetinguuid);
+                continue;
+            }
+
             try {
                 // Now check which recordings still exist on Zoom.
                 $recordinglist = $service->get_recording_url_list($meetinguuid);

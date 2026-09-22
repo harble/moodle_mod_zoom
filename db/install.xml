@@ -116,14 +116,15 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="This field exists only because Moodle requires us to have a unique 'id' field."/>
         <FIELD NAME="zoomid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="link to mdl_zoom table"/>
-        <FIELD NAME="meetinguuid" TYPE="char" LENGTH="30" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="zoomrecordingid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="meetinguuid" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="zoomrecordingid" TYPE="char" LENGTH="36" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="name" TYPE="char" LENGTH="300" NOTNULL="true" SEQUENCE="false" COMMENT="Recording topic. Max of 300 characters."/>
-        <FIELD NAME="externalurl" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Link to view the recording."/>
+        <FIELD NAME="externalurl" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Link to view the recording."/>
         <FIELD NAME="passcode" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false" COMMENT="Passcode to access the recording."/>
-        <FIELD NAME="recordingtype" TYPE="char" LENGTH="50" NOTNULL="true" SEQUENCE="false" COMMENT="Type of recording."/>
+        <FIELD NAME="recordingtype" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="Type of recording."/>
         <FIELD NAME="recordingstart" TYPE="int" LENGTH="12" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="showrecording" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="ismanual" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether the recording is manually uploaded."/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="12" NOTNULL="false" SEQUENCE="false" COMMENT="Timestamp when the record was created."/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="12" NOTNULL="false" SEQUENCE="false" COMMENT="Timestamp when the record was last modified."/>
       </FIELDS>

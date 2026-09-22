@@ -309,10 +309,10 @@ if ($zoom->show_schedule) {
     if (!empty($config->viewrecordings)) {
         $recordinghtml = null;
         $recordingaddurl = new moodle_url('/mod/zoom/recordings.php', ['id' => $cm->id]);
-        $recordingaddbutton = html_writer::div(get_string('recordingview', 'mod_zoom'), 'btn btn-primary');
-        $recordingaddbuttonhtml = html_writer::link($recordingaddurl, $recordingaddbutton, ['target' => '_blank']);
-        $recordingaddhtml = html_writer::div($recordingaddbuttonhtml);
-        $recordinghtml .= $recordingaddhtml;
+        $recordingicon = $OUTPUT->pix_icon('t/play', get_string('recordingview', 'mod_zoom'));
+        $recordingbutton = html_writer::div($recordingicon . ' ' . get_string('recordingview', 'mod_zoom'), 'btn btn-primary');
+        $recordinglink = html_writer::link($recordingaddurl, $recordingbutton, ['target' => '_blank']);
+        $recordinghtml .= $recordinglink;
 
         $rowrecordings = new html_table_row();
         $rowrecordings->id = 'zoom_schedule-recordings';

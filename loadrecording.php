@@ -41,15 +41,20 @@ $PAGE->set_context($context);
 
 require_capability('mod/zoom:view', $context);
 
-// Only show recording that is visble and valid.
+// Find the recording record.
 $params = [
     'id' => $recordingid,
-    'showrecording' => 1,
     'zoomid' => $zoom->id,
 ];
 $rec = $DB->get_record('zoom_meeting_recordings', $params);
 if (empty($rec)) {
     throw new moodle_exception('recordingnotfound', 'mod_zoom');
+}
+
+// Check visibility: for cloud recordings, respect showrecording flag.
+// For manual recordings, also respect showrecording flag.
+if (!has_capability('mod/zoom:addinstance', $context) && intval($rec->showrecording) !== 1) {
+    throw new moodle_exception('recordingnotvisible', 'mod_zoom');
 }
 
 $params = ['recordingsid' => $rec->id, 'userid' => $USER->id];
@@ -72,6 +77,27 @@ if (!empty($view)) {
     $view->id = $DB->insert_record('zoom_meeting_recordings_view', $view);
 }
 
-$nexturl = new moodle_url($rec->externalurl);
+// For manual recordings, redirect to the pluginfile URL.
+if ($rec->ismanual) {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($context->id, 'mod_zoom', 'recording', $rec->id, '', false);
+
+    if (empty($files)) {
+        throw new moodle_exception('recordingnotfound', 'mod_zoom');
+    }
+
+    $file = reset($files);
+    $pluginfileurl = moodle_url::make_pluginfile_url(
+        $context->id,
+        'mod_zoom',
+        'recording',
+        $rec->id,
+        '/',
+        $file->get_filename()
+    );
+    $nexturl = $pluginfileurl;
+} else {
+    $nexturl = new moodle_url($rec->externalurl);
+}
 
 redirect($nexturl);

@@ -1270,7 +1270,12 @@ function zoom_get_meeting_recordings_grouped($zoomid = null) {
     $records = $DB->get_records('zoom_meeting_recordings', $params, 'recordingstart ASC');
     $recordings = [];
     foreach ($records as $recording) {
-        $recordings[$recording->meetinguuid][$recording->zoomrecordingid] = $recording;
+        if ($recording->ismanual) {
+            // Group manual recordings by their id so each gets its own group.
+            $recordings['manual_' . $recording->id][$recording->id] = $recording;
+        } else {
+            $recordings[$recording->meetinguuid][$recording->zoomrecordingid] = $recording;
+        }
     }
 
     return $recordings;

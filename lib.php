@@ -960,11 +960,50 @@ function zoom_get_file_info($browser, $areas, $course, $cm, $context, $filearea,
  * @param array $options additional options affecting the file serving
  */
 function zoom_pluginfile($course, $cm, $context, $filearea, array $args, $forcedownload, array $options = []) {
+    global $DB;
+
     if ($context->contextlevel != CONTEXT_MODULE) {
         send_file_not_found();
     }
 
     require_login($course, true, $cm);
+
+    // Serve manual recording files.
+    if ($filearea === 'recording') {
+        if (!get_config('zoom', 'viewrecordings')) {
+            send_file_not_found();
+        }
+
+        $itemid = array_shift($args); // The recording id.
+        $filename = array_pop($args); // The file name.
+        $filepath = $args ? implode('/', $args) . '/' : '/';
+
+        // Verify the recording belongs to this zoom instance and is visible.
+        $recording = $DB->get_record('zoom_meeting_recordings', [
+            'id' => $itemid,
+            'zoomid' => $cm->instance,
+            'ismanual' => 1,
+        ]);
+
+        if (!$recording) {
+            send_file_not_found();
+        }
+
+        // Check visibility: managers see all, others only see visible ones.
+        $iszoommanager = has_capability('mod/zoom:addinstance', $context);
+        if (!$iszoommanager && intval($recording->showrecording) !== 1) {
+            send_file_not_found();
+        }
+
+        $fs = get_file_storage();
+        $file = $fs->get_file($context->id, 'mod_zoom', 'recording', $itemid, $filepath, $filename);
+
+        if (!$file) {
+            send_file_not_found();
+        }
+
+        send_stored_file($file, 0, 0, $forcedownload, $options);
+    }
 
     send_file_not_found();
 }

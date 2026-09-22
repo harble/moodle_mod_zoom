@@ -1038,5 +1038,76 @@ function xmldb_zoom_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026091600, 'zoom');
     }
 
+    if ($oldversion < 2026092200) {
+        // Define table zoom_meeting_recordings for modifications.
+        $table = new xmldb_table('zoom_meeting_recordings');
+
+        // Define field ismanual to be added.
+        $field = new xmldb_field('ismanual', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'showrecording');
+
+        // Conditionally launch add field ismanual.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Change meetinguuid to nullable.
+        $field = new xmldb_field('meetinguuid', XMLDB_TYPE_CHAR, '30', null, null, null, null);
+        $dbman->change_field_notnull($table, $field);
+
+        // Change zoomrecordingid to nullable.
+        $field = new xmldb_field('zoomrecordingid', XMLDB_TYPE_CHAR, '36', null, null, null, null);
+        $dbman->change_field_notnull($table, $field);
+
+        // Change externalurl to nullable.
+        $field = new xmldb_field('externalurl', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $dbman->change_field_notnull($table, $field);
+
+        // Change recordingtype to nullable.
+        $field = new xmldb_field('recordingtype', XMLDB_TYPE_CHAR, '50', null, null, null, null);
+        $dbman->change_field_notnull($table, $field);
+
+        // Zoom savepoint reached.
+        upgrade_mod_savepoint(true, 2026092200, 'zoom');
+    }
+
+    if ($oldversion < 2026092300) {
+        // Ensure ismanual field exists on zoom_meeting_recordings.
+        $table = new xmldb_table('zoom_meeting_recordings');
+
+        $field = new xmldb_field('ismanual', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'showrecording');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Ensure meetinguuid is nullable (may have been missed in 2026092200 upgrade).
+        $field = new xmldb_field('meetinguuid', XMLDB_TYPE_CHAR, '30', null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $columns = $DB->get_columns('zoom_meeting_recordings');
+            if (isset($columns['meetinguuid']) && $columns['meetinguuid']->not_null) {
+                $dbman->change_field_notnull($table, $field);
+            }
+        }
+
+        // Ensure zoomrecordingid is nullable (may have been missed in 2026092200 upgrade).
+        $field = new xmldb_field('zoomrecordingid', XMLDB_TYPE_CHAR, '36', null, null, null, null);
+        if ($dbman->field_exists($table, $field) && isset($columns['zoomrecordingid']) && $columns['zoomrecordingid']->not_null) {
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        // Ensure externalurl is nullable (may have been missed in 2026092200 upgrade).
+        $field = new xmldb_field('externalurl', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        if ($dbman->field_exists($table, $field) && isset($columns['externalurl']) && $columns['externalurl']->not_null) {
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        // Ensure recordingtype is nullable (may have been missed in 2026092200 upgrade).
+        $field = new xmldb_field('recordingtype', XMLDB_TYPE_CHAR, '50', null, null, null, null);
+        if ($dbman->field_exists($table, $field) && isset($columns['recordingtype']) && $columns['recordingtype']->not_null) {
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026092300, 'zoom');
+    }
+
     return true;
 }

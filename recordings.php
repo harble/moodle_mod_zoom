@@ -51,20 +51,31 @@ echo $OUTPUT->heading($strname);
 
 $iszoommanager = has_capability('mod/zoom:addinstance', $context);
 
+// Show upload button for managers.
+if ($iszoommanager) {
+    $uploadurl = new moodle_url('/mod/zoom/uploadrecording.php', ['id' => $cm->id]);
+    echo html_writer::div(
+        html_writer::link($uploadurl, get_string('uploadrecording', 'mod_zoom'), ['class' => 'btn btn-primary mb-3']),
+        'mb-3'
+    );
+}
+
 // Set up html table.
 $table = new html_table();
 $table->attributes['class'] = 'generaltable mod_view';
 if ($iszoommanager) {
-    $table->align = ['left', 'left', 'left', 'left'];
+    $table->align = ['left', 'left', 'left', 'left', 'left'];
     $table->head = [
+        get_string('recordingmethod', 'mod_zoom'),
         get_string('recordingdate', 'mod_zoom'),
         get_string('recordinglink', 'mod_zoom'),
         get_string('recordingpasscode', 'mod_zoom'),
-        get_string('recordingshowtoggle', 'mod_zoom'),
+        get_string('actions', 'mod_zoom'),
     ];
 } else {
-    $table->align = ['left', 'left', 'left'];
+    $table->align = ['left', 'left', 'left', 'left'];
     $table->head = [
+        get_string('recordingmethod', 'mod_zoom'),
         get_string('recordingdate', 'mod_zoom'),
         get_string('recordinglink', 'mod_zoom'),
         get_string('recordingpasscode', 'mod_zoom'),
@@ -86,40 +97,72 @@ if (empty($recordings)) {
         $recordingdate = '';
         $recordinghtml = '';
         $recordingpasscode = '';
-        $recordingshowhtml = '';
+        $recordingmethodhtml = '';
+        $actionhtml = '';
         foreach ($grouping as $recording) {
             // If zoom admin -> show all recordings.
             // Or if visible to students.
             if ($iszoommanager || intval($recording->showrecording) === 1) {
                 if (empty($recordingdate)) {
-                    $recordingdate = date('F j, Y, g:i:s a \P\T', $recording->recordingstart);
+                    $recordingdate = date('Y/m/d H:i', $recording->recordingstart);
                 }
 
                 if (empty($recordingpasscode)) {
                     $recordingpasscode = $recording->passcode;
                 }
 
-                if ($iszoommanager && empty($recordingshowhtml)) {
-                    $isrecordinghidden = intval($recording->showrecording) === 0;
-                    $urlparams = [
-                        'id' => $cm->id,
-                        'meetinguuid' => $recording->meetinguuid,
-                        'recordingstart' => $recording->recordingstart,
-                        'showrecording' => ($isrecordinghidden) ? 1 : 0,
-                        'sesskey' => sesskey(),
-                    ];
-                    // If the user is a zoom admin, show the button to toggle whether students can see the recording or not.
-                    $recordingshowurl = new moodle_url('/mod/zoom/showrecording.php', $urlparams);
-                    $recordingshowtext = get_string('recordinghide', 'mod_zoom');
-                    if ($isrecordinghidden) {
-                        $recordingshowtext = get_string('recordingshow', 'mod_zoom');
+                // Recording method.
+                if (empty($recordingmethodhtml)) {
+                    if ($recording->ismanual) {
+                        $recordingmethodhtml = get_string('recordingmethod_manual', 'mod_zoom');
+                    } else {
+                        $recordingmethodhtml = get_string('recordingmethod_cloud', 'mod_zoom');
                     }
+                }
 
-                    $btnclass = 'btn btn-';
-                    $btnclass .= $isrecordinghidden ? 'dark' : 'primary';
-                    $recordingshowbutton = html_writer::div($recordingshowtext, $btnclass);
-                    $recordingshowbuttonhtml = html_writer::link($recordingshowurl, $recordingshowbutton);
-                    $recordingshowhtml = html_writer::div($recordingshowbuttonhtml);
+                // Build action column for managers.
+                if ($iszoommanager && empty($actionhtml)) {
+                    if ($recording->ismanual) {
+                        // Manual recording: show retransmit and delete buttons.
+                        $retransmiturl = new moodle_url('/mod/zoom/uploadrecording.php', [
+                            'id' => $cm->id,
+                            'recordingid' => $recording->id,
+                        ]);
+                        $retransmitbtn = html_writer::link($retransmiturl,
+                            get_string('retransmitrecording', 'mod_zoom'),
+                            ['class' => 'btn btn-secondary btn-sm mr-1']);
+
+                        $deleteurl = new moodle_url('/mod/zoom/deleterecording.php', [
+                            'id' => $cm->id,
+                            'recordingid' => $recording->id,
+                            'sesskey' => sesskey(),
+                        ]);
+                        $deletebtn = html_writer::link($deleteurl,
+                            get_string('deleterecording', 'mod_zoom'),
+                            ['class' => 'btn btn-danger btn-sm']);
+
+                        $actionhtml = $retransmitbtn . ' ' . $deletebtn;
+                    } else {
+                        // Cloud recording: keep show/hide toggle.
+                        $isrecordinghidden = intval($recording->showrecording) === 0;
+                        $urlparams = [
+                            'id' => $cm->id,
+                            'meetinguuid' => $recording->meetinguuid,
+                            'recordingstart' => $recording->recordingstart,
+                            'showrecording' => ($isrecordinghidden) ? 1 : 0,
+                            'sesskey' => sesskey(),
+                        ];
+                        $recordingshowurl = new moodle_url('/mod/zoom/showrecording.php', $urlparams);
+                        $recordingshowtext = get_string('recordinghide', 'mod_zoom');
+                        if ($isrecordinghidden) {
+                            $recordingshowtext = get_string('recordingshow', 'mod_zoom');
+                        }
+
+                        $btnclass = 'btn btn-';
+                        $btnclass .= $isrecordinghidden ? 'dark' : 'primary';
+                        $recordingshowbutton = html_writer::div($recordingshowtext, $btnclass);
+                        $actionhtml = html_writer::link($recordingshowurl, $recordingshowbutton);
+                    }
                 }
 
                 $recordingname = trim($recording->name) . ' (' . zoom_get_recording_type_string($recording->recordingtype) . ')';
@@ -131,8 +174,11 @@ if (empty($recordings)) {
             }
         }
 
-        // Output only one row per grouping.
-        $table->data[] = [$recordingdate, $recordinghtml, htmlspecialchars($recordingpasscode), $recordingshowhtml];
+        if ($iszoommanager) {
+            $table->data[] = [$recordingmethodhtml, $recordingdate, $recordinghtml, htmlspecialchars($recordingpasscode), $actionhtml];
+        } else {
+            $table->data[] = [$recordingmethodhtml, $recordingdate, $recordinghtml, htmlspecialchars($recordingpasscode)];
+        }
     }
 }
 
@@ -140,10 +186,15 @@ if (empty($recordings)) {
  * Get the display name for a Zoom recording type.
  *
  * @package mod_zoom
- * @param string $recordingtype Zoom recording type.
+ * @param string $recordingtype Zoom recording type or custom type.
  * @return string
  */
 function zoom_get_recording_type_string($recordingtype) {
+    // Handle manual recording type.
+    if (empty($recordingtype) || $recordingtype === 'manual') {
+        return get_string('recordingmethod_manual', 'mod_zoom');
+    }
+
     $recordingtypestringmap = [
         'active_speaker' => 'recordingtype_active_speaker',
         'audio_interpretation' => 'recordingtype_audio_interpretation',
