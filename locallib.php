@@ -224,7 +224,7 @@ function zoom_get_sessions_for_display($zoomid) {
     require_once($CFG->libdir . '/moodlelib.php');
 
     $sessions = [];
-    $format = get_string('strftimedatetimeshort', 'langconfig');
+    $format = '%Y/%m/%d %H:%M';
 
     // Sort sessions in start_time ascending order.
     $instances = $DB->get_records('zoom_meeting_details', ['zoomid' => $zoomid], 'start_time');
@@ -268,9 +268,19 @@ function zoom_get_sessions_for_display($zoomid) {
 
         $sessions[$uuid]['count'] = $uniqueparticipantcount;
         $sessions[$uuid]['topic'] = $instance->topic;
-        $sessions[$uuid]['duration'] = $instance->duration;
+        // Duration is stored in minutes by get_meeting_reports task, convert to seconds for format_time().
+        $sessions[$uuid]['duration'] = $instance->duration * 60;
         $sessions[$uuid]['starttime'] = userdate($instance->start_time, $format);
         $sessions[$uuid]['endtime'] = userdate($instance->start_time + $instance->duration * 60, $format);
+
+        // Collect unique participant names.
+        $participantnames = [];
+        foreach ($participantlist as $p) {
+            if (!empty($p->name) && !in_array($p->name, $participantnames)) {
+                $participantnames[] = $p->name;
+            }
+        }
+        $sessions[$uuid]['participantnames'] = $participantnames;
     }
 
     return $sessions;

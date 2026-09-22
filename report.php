@@ -54,21 +54,20 @@ if (!empty($sessions)) {
     $maskparticipantdata = get_config('zoom', 'maskparticipantdata');
     $table = new html_table();
     $table->head = [
-        get_string('title', 'mod_zoom'),
         get_string('starttime', 'mod_zoom'),
         get_string('endtime', 'mod_zoom'),
-        get_string('duration', 'mod_zoom'),
-        get_string('participants', 'mod_zoom'),
+        get_string('reportduration', 'mod_zoom'),
+        get_string('reportparticipants', 'mod_zoom'),
+        get_string('reportparticipantname', 'mod_zoom'),
     ];
     $table->align = ['left', 'left', 'left', 'left', 'left'];
-    $format = get_string('strftimedatetimeshort', 'langconfig');
 
     foreach ($sessions as $uuid => $meet) {
         $row = [];
-        $row[] = $meet['topic'];
         $row[] = $meet['starttime'];
         $row[] = $meet['endtime'];
-        $row[] = format_time($meet['duration']);
+        $durationmins = round($meet['duration'] / 60);
+        $row[] = $durationmins . get_string('durationmin', 'mod_zoom');
 
         if ($meet['count'] > 0) {
             if ($maskparticipantdata) {
@@ -84,6 +83,14 @@ if (!empty($sessions)) {
         } else {
             $row[] = 0;
         }
+
+        // Participant names.
+        $namehtml = '';
+        if (!empty($meet['participantnames'])) {
+            $namelist = array_map('s', $meet['participantnames']);
+            $namehtml = implode('<br>', $namelist);
+        }
+        $row[] = $namehtml;
 
         $table->data[] = $row;
     }
