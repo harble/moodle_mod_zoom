@@ -527,4 +527,7 @@ $string['externalmeetingurl_help'] = 'Paste the full join URL of an external mee
 $string['externalmeetingurlinvalid'] = 'The external meeting URL is invalid. Please enter a valid HTTPS URL from a supported meeting platform.';
 
 $string['externalmeeting'] = 'This meeting uses an external link';
+$string['recordingfilemissing'] = 'The file associated with this recording could not be found.';
+$string['recordingassetunavailable'] = 'The central-storage video associated with this recording is missing or unavailable.';
+$string['recordingsigningfailed'] = 'A temporary playback link could not be generated. Please contact the administrator to check the Bunny playback signing configuration.';
 $string['externalmeetinginfo'] = 'This meeting uses an external link ({$a}). Click the button below to join.';

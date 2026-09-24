@@ -528,4 +528,7 @@ $string['externalmeetingurl_help'] = '粘贴外部会议的完整加入链接。
 $string['externalmeetingurlinvalid'] = '外部会议链接无效。请输入受支持的会议平台的有效 HTTPS 链接。';
 
 $string['externalmeeting'] = '此会议使用外部链接';
+$string['recordingfilemissing'] = '未找到此录制关联的文件。';
+$string['recordingassetunavailable'] = '此录制关联的中央存储视频不存在或暂不可用。';
+$string['recordingsigningfailed'] = '无法生成临时播放链接，请联系管理员检查 Bunny 播放签名配置。';
 $string['externalmeetinginfo'] = '此会议使用外部链接（{$a}），请点击下方按钮加入。';

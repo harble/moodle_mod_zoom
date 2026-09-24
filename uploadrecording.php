@@ -89,7 +89,7 @@ class mod_zoom_upload_recording_form extends moodleform {
         }
 
         // Recording date.
-        $mform->addElement('date_selector', 'recordingstart', get_string('recordingdate', 'mod_zoom'));
+        $mform->addElement('date_time_selector', 'recordingstart', get_string('recordingdate', 'mod_zoom'));
         $mform->addRule('recordingstart', null, 'required', null, 'client');
         $defaulttime = time();
         if ($recording) {

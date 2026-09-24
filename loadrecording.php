@@ -77,16 +77,60 @@ if (!empty($view)) {
     $view->id = $DB->insert_record('zoom_meeting_recordings_view', $view);
 }
 
-// For manual recordings, redirect to the pluginfile URL.
+// Render central-storage videos with the media player; serve other manual files normally.
 if ($rec->ismanual) {
     $fs = get_file_storage();
     $files = $fs->get_area_files($context->id, 'mod_zoom', 'recording', $rec->id, '', false);
 
     if (empty($files)) {
-        throw new moodle_exception('recordingnotfound', 'mod_zoom');
+        throw new moodle_exception('recordingfilemissing', 'mod_zoom');
     }
 
     $file = reset($files);
+    require_once($CFG->dirroot . '/repository/centralstorage/locallib.php');
+    $source = (string)$file->get_source();
+    $asset = repository_centralstorage_find_asset_from_file_source($source);
+    $metadata = repository_centralstorage_decode_file_source($source);
+    $iscentralvideo = ($metadata['storage'] ?? '') === 'centralstorage_cdn'
+        && (str_starts_with((string)($metadata['contenttype'] ?? ''), 'video/')
+            || repository_centralstorage_bunny_video_identifiers((string)($metadata['source'] ?? '')) !== null);
+
+    if (($asset && $asset->provider === 'bunnystream') || $iscentralvideo) {
+        if (!$asset || $asset->provider !== 'bunnystream' || $asset->status !== 'ready'
+                || repository_centralstorage_bunny_video_identifiers((string)$asset->url) === null) {
+            throw new moodle_exception('recordingassetunavailable', 'mod_zoom');
+        }
+
+        // Access is established by the recording checks above and its stored file reference.
+        // The asset's primary course is an organisational field, not this recording's access rule.
+        $signedurl = repository_centralstorage_bunny_signed_player_url((string)$asset->url);
+        $signedparams = [];
+        parse_str((string)parse_url($signedurl ?? '', PHP_URL_QUERY), $signedparams);
+        if (!$signedurl || !is_string($signedparams['token'] ?? null)
+                || !preg_match('/^[a-f0-9]{64}$/i', $signedparams['token'])
+                || !is_scalar($signedparams['expires'] ?? null)
+                || !ctype_digit((string)$signedparams['expires'])
+                || (int)$signedparams['expires'] <= time()) {
+            throw new moodle_exception('recordingsigningfailed', 'mod_zoom');
+        }
+
+        $PAGE->set_url('/mod/zoom/loadrecording.php', ['id' => $cm->id, 'recordingid' => $rec->id]);
+        $PAGE->set_title(format_string($rec->name));
+        $PAGE->set_heading($course->fullname);
+        $PAGE->set_pagelayout('incourse');
+
+        // Use the shared Bunny player with the URL signed for this authorised recording view.
+        // Do not re-resolve it through the course-owned-asset signing endpoint.
+        $player = repository_centralstorage_bunny_embed_html($signedurl, $rec->name);
+        repository_centralstorage_require_bunny_player();
+
+        echo $OUTPUT->header();
+        echo $OUTPUT->heading(format_string($rec->name));
+        echo html_writer::div($player, '', ['style' => 'max-width:960px;']);
+        echo $OUTPUT->footer();
+        exit;
+    }
+
     $pluginfileurl = moodle_url::make_pluginfile_url(
         $context->id,
         'mod_zoom',
