@@ -34,6 +34,7 @@ $string['addparticipantgroup'] = '添加参与者分组';
 $string['addroom'] = '添加分组讨论室';
 $string['addroomalert'] = '点击以添加分组讨论室';
 $string['addtocalendar'] = '添加到日历';
+$string['addtocalendar_help'] = '点击"下载 iCal"按钮下载 .ics 文件。下载后使用您的日历软件（如 Outlook、Google 日历、Apple 日历等）打开该文件，即可将会议添加到您的个人日历中。对于定期会议，会自动添加所有发生项。';
 $string['allmeetings'] = '所有会议';
 $string['allmeetings_disable'] = '禁用“所有会议”链接';
 $string['allmeetings_enable'] = '启用“所有会议”链接';

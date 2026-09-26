@@ -35,6 +35,7 @@ $string['addparticipantgroup'] = 'Add a group of participants';
 $string['addroom'] = 'Add a room';
 $string['addroomalert'] = 'Add a room by clicking';
 $string['addtocalendar'] = 'Add to calendar';
+$string['addtocalendar_help'] = 'Click the "Download iCal" button to download an .ics file. Open the downloaded file with your calendar software (e.g. Outlook, Google Calendar, Apple Calendar) to add this meeting to your personal calendar. For recurring meetings, all occurrences will be added automatically.';
 $string['allmeetings'] = 'All meetings';
 $string['allmeetings_desc'] = 'With this setting, you can control if a link to the Zoom activity index page will be shown at the bottom of every activity instance overview page or not. This setting only affects the presentation of the link on the Zoom activity overview pages. Even if you decide not to show the link there, the user might still be able to access the Zoom activity index page through other links within the course.';
 $string['allmeetings_disable'] = 'Disable all meetings link';

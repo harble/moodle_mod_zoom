@@ -396,7 +396,7 @@ if ($zoom->show_schedule) {
         $buttonhtml = html_writer::link((string) $icallink, $calendarbutton, ['target' => '_blank']);
         $rowaddtocalendar = new html_table_row();
         $rowaddtocalendar->id = 'zoom_schedule-addtocalendar';
-        $addtocalendarheader = new html_table_cell(get_string('addtocalendar', 'mod_zoom'));
+        $addtocalendarheader = new html_table_cell(get_string('addtocalendar', 'mod_zoom') . $OUTPUT->help_icon('addtocalendar', 'mod_zoom'));
         $addtocalendarheader->header = true;
         $rowaddtocalendar->cells = [$addtocalendarheader, $buttonhtml];
         $table->data[] = $rowaddtocalendar;
