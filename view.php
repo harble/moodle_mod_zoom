@@ -133,7 +133,7 @@ echo html_writer::tag('style', '
         width: 100%;
     }
     .zoom-section-table.generaltable .cell.c0 {
-        min-width: 80px;
+        min-width: 100px;
     }
     .zoom-section-table.generaltable .btn.btn-primary {
         padding-right: 21px;
@@ -308,7 +308,7 @@ if ($zoom->show_schedule) {
     $table = new html_table();
     $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
-    $table->size = ['35%', '65%'];
+    $table->size = ['26%', '74%'];
     $numcolumns = 2;
 
     // Show start/end date or recurring meeting information.
@@ -425,20 +425,34 @@ if ($zoom->show_schedule) {
                 }
 
                 if ($hasvisible && $firstrecording) {
-                    // Card header: method badge + date.
-                    $headerhtml = html_writer::tag('span', $groupmethod, ['class' => 'recording-method-badge']);
-                    if (!empty($groupdate)) {
-                        $headerhtml .= html_writer::tag('span', $groupdate, ['class' => 'recording-date']);
+                    // Card header: method icon + date + passcode (right side).
+                    $headerhtml = '';
+                    if ($firstrecording->ismanual) {
+                        $methodicon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" title="' . get_string('recordingmethod_manual', 'mod_zoom') . '">'
+                                   . '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+                                   . '<polygon points="10,8 16,12 10,16" fill="currentColor" stroke="currentColor" stroke-width="0.5"/>'
+                                   . '</svg>';
+                    } else {
+                        $methodicon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" title="' . get_string('recordingmethod_cloud', 'mod_zoom') . '">'
+                                   . '<path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+                                   . '</svg>';
                     }
-                    $itemhtml = html_writer::div($headerhtml, 'recording-item-header');
-
-                    // Card body: recording links + passcode.
-                    $bodyhtml = $grouprecordinghtml;
+                    // Wrap icon and date in a nowrap container for narrow screens.
+                    $iconhtml = '';
+                    $iconhtml .= html_writer::tag('span', $methodicon, ['class' => 'recording-method-icon']);
+                    if (!empty($groupdate)) {
+                        $iconhtml .= html_writer::tag('span', $groupdate, ['class' => 'recording-date']);
+                    }
+                    $headerhtml .= html_writer::tag('span', $iconhtml, ['style' => 'white-space:nowrap;display:inline-flex;align-items:center;', 'title' => $groupmethod]);
                     if (!empty($grouppasscode)) {
                         $passcodelabel = html_writer::tag('strong', get_string('recordingpasscode', 'mod_zoom') . ':');
                         $passcodelabel .= ' ' . htmlspecialchars($grouppasscode);
-                        $bodyhtml .= html_writer::div($passcodelabel, 'recording-passcode');
+                        $headerhtml .= html_writer::tag('span', $passcodelabel, ['class' => 'recording-passcode-header']);
                     }
+                    $itemhtml = html_writer::div($headerhtml, 'recording-item-header');
+
+                    // Card body: recording links.
+                    $bodyhtml = $grouprecordinghtml;
                     $itemhtml .= html_writer::div($bodyhtml, 'recording-item-body');
 
                     $recordinglisthtml .= html_writer::div($itemhtml, 'recording-item');
@@ -457,12 +471,9 @@ if ($zoom->show_schedule) {
         // Show "管理录制" button for managers only.
         if ($iszoommanager) {
             $manageurl = new moodle_url('/mod/zoom/recordings.php', ['id' => $cm->id]);
-            $videoicon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:middle;margin-right:4px">'
-                       . '<path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>'
-                       . '</svg>';
-            $managebtn = html_writer::link($manageurl,
-                $videoicon . get_string('managerecordings', 'mod_zoom'),
-                ['class' => 'btn btn-primary']);
+            $videoicon = $OUTPUT->pix_icon('t/play', get_string('managerecordings', 'mod_zoom'));
+            $managebtncontent = html_writer::div($videoicon . ' ' . get_string('managerecordings', 'mod_zoom'), 'btn btn-primary');
+            $managebtn = html_writer::link((string) $manageurl, $managebtncontent);
             $recordinghtml .= html_writer::div($managebtn, 'mt-2');
         }
 
@@ -612,7 +623,7 @@ if ($zoom->show_security && !$isexternalmeeting) {
     $table = new html_table();
     $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
-    $table->size = ['35%', '65%'];
+    $table->size = ['26%', '74%'];
     $numcolumns = 2;
 
     // Get passcode information.
@@ -711,7 +722,7 @@ if ($zoom->show_media && !$isexternalmeeting) {
     $table = new html_table();
     $table->attributes['class'] = 'generaltable mod_view zoom-section-table';
     $table->align = ['center', 'left'];
-    $table->size = ['35%', '65%'];
+    $table->size = ['26%', '74%'];
     $numcolumns = 2;
 
     // Show host video.
