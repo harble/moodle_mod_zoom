@@ -1460,6 +1460,63 @@ function zoom_cm_info_dynamic(cm_info $cm) {
         if (!$finished && $moduleinstance->recurrence_type != ZOOM_RECURRINGTYPE_NOTIME) {
             $cm->override_customdata('start_time', zoom_get_next_occurrence($moduleinstance));
         }
+
+        // ========================================
+        // Meeting status badge on course page.
+        // ========================================
+        $config = get_config('zoom');
+        $now = time();
+        $status = '';
+        $tooltiplines = [];
+
+        // Recurring meeting without fixed time → "已就绪".
+        if (!empty($moduleinstance->recurring) && (int)$moduleinstance->recurrence_type === ZOOM_RECURRINGTYPE_NOTIME) {
+            $status = 'ready';
+            $tooltiplines[] = get_string('meetingstatustooltip_recurringnotime', 'mod_zoom');
+        } else {
+            // Get the relevant start time.
+            if (!empty($moduleinstance->recurring)) {
+                $starttime = zoom_get_next_occurrence($moduleinstance);
+            } else {
+                $starttime = (int)$moduleinstance->start_time;
+            }
+
+            if ($starttime == 0) {
+                // No more occurrences left.
+                $status = 'finished';
+                $tooltiplines[] = get_string('meetingstatus_finished', 'mod_zoom');
+            } else {
+                $duration = (int)$moduleinstance->duration;
+                $firstabletojoin = $moduleinstance->firstabletojoin;
+                if ($firstabletojoin === null || $firstabletojoin < 0) {
+                    $firstabletojoin = $config->firstabletojoin ?? 0;
+                }
+                $joinable = $starttime - ($firstabletojoin * 60);
+                $endtime = $starttime + $duration;
+
+                // Determine status.
+                if ($now >= $starttime && $now <= $endtime) {
+                    $status = 'inprogress';
+                } else if ($now >= $joinable && $now < $starttime) {
+                    $status = 'abouttostart';
+                } else if ($now < $joinable) {
+                    $status = 'notstarted';
+                } else {
+                    $status = 'finished';
+                }
+
+                // Build tooltip content.
+                $dateformat = '%Y/%m/%d %H:%M';
+                $tooltiplines[] = get_string('meetingstatustooltip_start', 'mod_zoom', userdate($starttime, $dateformat));
+                $durationmins = (int)ceil($duration / 60);
+                $tooltiplines[] = get_string('meetingstatustooltip_duration', 'mod_zoom', $durationmins);
+            }
+        }
+
+        if (!empty($status)) {
+            // Add left border class to the activity container.
+            $cm->set_extra_classes('has-zoom-meeting-status zoom-meeting-status-' . $status);
+        }
     }
 }
 

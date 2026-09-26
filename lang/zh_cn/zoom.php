@@ -534,3 +534,13 @@ $string['recordingfilemissing'] = '未找到此录制关联的文件。';
 $string['recordingassetunavailable'] = '此录制关联的中央存储视频不存在或暂不可用。';
 $string['recordingsigningfailed'] = '无法生成临时播放链接，请联系管理员检查 Bunny 播放签名配置。';
 $string['externalmeetinginfo'] = '此会议使用外部链接（{$a}），请点击下方按钮加入。';
+
+// Meeting status badges for course page.
+$string['meetingstatus_notstarted'] = '尚未开始';
+$string['meetingstatus_abouttostart'] = '即将开始';
+$string['meetingstatus_inprogress'] = '进行中';
+$string['meetingstatus_finished'] = '已结束';
+$string['meetingstatus_ready'] = '已就绪';
+$string['meetingstatustooltip_start'] = '开始时间：{$a}';
+$string['meetingstatustooltip_duration'] = '时长：{$a} 分钟';
+$string['meetingstatustooltip_recurringnotime'] = '此会议无固定时间，随时可加入。';

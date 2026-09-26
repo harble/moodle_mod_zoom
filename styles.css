@@ -108,3 +108,48 @@
         align-items: flex-start;
     }
 }
+
+/* Meeting status badges on course page - left border indicator */
+.activity.modtype_zoom.has-zoom-meeting-status {
+    border-left: 4px solid transparent;
+}
+
+.activity.modtype_zoom.has-zoom-meeting-status.zoom-meeting-status-inprogress {
+    border-left-color: #28a745;
+}
+
+.activity.modtype_zoom.has-zoom-meeting-status.zoom-meeting-status-abouttostart {
+    border-left-color: #ac8204;
+}
+
+.activity.modtype_zoom.has-zoom-meeting-status.zoom-meeting-status-notstarted {
+    border-left-color: #007bff;
+}
+
+.activity.modtype_zoom.has-zoom-meeting-status.zoom-meeting-status-finished {
+    border-left-color: #495057;
+}
+
+.activity.modtype_zoom.has-zoom-meeting-status.zoom-meeting-status-ready {
+    border-left-color: #17a2b8;
+}
+
+/* Custom darker gray for finished badge */
+.activitybadge.badge-finished {
+    background-color: #495057;
+}
+
+/* Darker orange for abouttostart badge - better contrast with white text */
+.activitybadge.badge-abouttostart {
+    background-color: #d97706;
+}
+
+/* Slightly larger badge text */
+.activitybadge.badge {
+    font-size: 0.78rem;
+}
+
+/* Add gap between activity link and badge to prevent accidental link hover */
+.activity.modtype_zoom .activityname .ms-1 {
+    margin-left: 0.7rem !important;
+}
