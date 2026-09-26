@@ -744,8 +744,9 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
         if ($finished !== true) {
             // If the admin wants to show the leadtime.
             if (!empty($config->displayleadtime) && $firstabletojoin > 0) {
-                $unavailabilitynote = $strunavailable . '<br />' . $joinpolicy .
-                    '<br /><span class="text-muted small">' . $joinwindow .
+                $unavailabilitynote = $strunavailable .
+                    '<br /><span class="text-muted small">' . $joinpolicy .
+                    '<br />' . $joinwindow .
                     '<br />' . $timediff . '</span>';
 
                 // Otherwise.
