@@ -229,6 +229,7 @@ $string['licensesettings'] = 'License settings';
 $string['licensesettings_desc'] = 'These settings define the way how Moodle handles your Zoom license.';
 $string['licensesnumber'] = 'Number of licenses';
 $string['lowlicenses'] = 'If the number of your licenses exceeds those required, then when you create each new activity by the user, it will be assigned a PRO license by lowering the status of another user. The option is effective when the number of active PRO-licenses is more than 5.';
+$string['managerecordings'] = 'Manage Recordings';
 $string['maskparticipantdata'] = 'Mask participant data';
 $string['maskparticipantdata_help'] = 'Prevents participant data from appearing in reports (useful for sites that mask participant data, e.g., for HIPAA).';
 $string['media'] = 'Media';

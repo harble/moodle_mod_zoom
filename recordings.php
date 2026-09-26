@@ -186,49 +186,6 @@ if (empty($recordings)) {
     }
 }
 
-/**
- * Get the display name for a Zoom recording type.
- *
- * @package mod_zoom
- * @param string $recordingtype Zoom recording type or custom type.
- * @return string
- */
-function zoom_get_recording_type_string($recordingtype) {
-    // Handle manual recording type.
-    if (empty($recordingtype) || $recordingtype === 'manual') {
-        return get_string('recordingmethod_manual', 'mod_zoom');
-    }
-
-    $recordingtypestringmap = [
-        'active_speaker' => 'recordingtype_active_speaker',
-        'audio_interpretation' => 'recordingtype_audio_interpretation',
-        'audio_only' => 'recordingtype_audio_only',
-        'audio_transcript' => 'recordingtype_audio_transcript',
-        'chat_file' => 'recordingtype_chat',
-        'closed_caption' => 'recordingtype_closed_caption',
-        'gallery_view' => 'recordingtype_gallery',
-        'poll' => 'recordingtype_poll',
-        'production_studio' => 'recordingtype_production_studio',
-        'shared_screen' => 'recordingtype_shared',
-        'shared_screen_with_gallery_view' => 'recordingtype_shared_gallery',
-        'shared_screen_with_speaker_view' => 'recordingtype_shared_speaker',
-        'shared_screen_with_speaker_view(CC)' => 'recordingtype_shared_speaker_cc',
-        'sign_interpretation' => 'recordingtype_sign',
-        'speaker_view' => 'recordingtype_speaker',
-        'summary' => 'recordingtype_summary',
-        'summary_next_steps' => 'recordingtype_summary_next_steps',
-        'summary_smart_chapters' => 'recordingtype_summary_smart_chapters',
-        'timeline' => 'recordingtype_timeline',
-    ];
-
-    // Return some default string in case new recordingtype values are added in the future.
-    if (empty($recordingtypestringmap[$recordingtype])) {
-        return $recordingtype;
-    }
-
-    return get_string($recordingtypestringmap[$recordingtype], 'mod_zoom');
-}
-
 echo html_writer::table($table);
 
 echo $OUTPUT->footer();

@@ -136,6 +136,7 @@ $string['jointime'] = '加入时间';
 $string['leavetime'] = '离开时间';
 $string['licensesettings'] = '许可证设置';
 $string['licensesnumber'] = '许可证数量';
+$string['managerecordings'] = '管理录制';
 $string['maskparticipantdata'] = '隐藏参与者数据';
 $string['media'] = '媒体';
 $string['meeting_finished'] = '已结束';

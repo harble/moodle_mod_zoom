@@ -133,7 +133,7 @@ echo html_writer::tag('style', '
         width: 100%;
     }
     .zoom-section-table.generaltable .cell.c0 {
-        min-width: 110px;
+        min-width: 80px;
     }
     .zoom-section-table.generaltable .btn.btn-primary {
         padding-right: 21px;
@@ -373,12 +373,98 @@ if ($zoom->show_schedule) {
 
     // Show recordings section if option enabled to view recordings.
     if (!empty($config->viewrecordings)) {
-        $recordinghtml = null;
-        $recordingaddurl = new moodle_url('/mod/zoom/recordings.php', ['id' => $cm->id]);
-        $recordingicon = $OUTPUT->pix_icon('t/play', get_string('recordingview', 'mod_zoom'));
-        $recordingbutton = html_writer::div($recordingicon . ' ' . get_string('recordingview', 'mod_zoom'), 'btn btn-primary');
-        $recordinglink = html_writer::link($recordingaddurl, $recordingbutton, ['target' => '_blank']);
-        $recordinghtml .= $recordinglink;
+        $recordinghtml = '';
+
+        // Load recordings for inline display.
+        $recordinggroups = zoom_get_meeting_recordings_grouped($zoom->id);
+
+        if (!empty($recordinggroups)) {
+            $recordinglisthtml = '';
+            foreach ($recordinggroups as $grouping) {
+                $grouprecordinghtml = '';
+                $groupmethod = '';
+                $groupdate = '';
+                $grouppasscode = '';
+                $hasvisible = false;
+                $firstrecording = null;
+
+                foreach ($grouping as $recording) {
+                    if ($iszoommanager || intval($recording->showrecording) === 1) {
+                        $hasvisible = true;
+                        if ($firstrecording === null) {
+                            $firstrecording = $recording;
+                        }
+
+                        if (empty($groupdate)) {
+                            $groupdate = date('Y/m/d H:i', $recording->recordingstart);
+                        }
+                        if (empty($grouppasscode)) {
+                            $grouppasscode = $recording->passcode;
+                        }
+                        if (empty($groupmethod)) {
+                            if ($recording->ismanual) {
+                                $groupmethod = get_string('recordingmethod_manual', 'mod_zoom');
+                            } else {
+                                $groupmethod = get_string('recordingmethod_cloud', 'mod_zoom');
+                            }
+                        }
+
+                        // Build recording link.
+                        if ($recording->ismanual) {
+                            $recordingname = trim($recording->name);
+                        } else {
+                            $recordingname = trim($recording->name) . ' (' . zoom_get_recording_type_string($recording->recordingtype) . ')';
+                        }
+                        $params = ['id' => $cm->id, 'recordingid' => $recording->id];
+                        $recordingurl = new moodle_url('/mod/zoom/loadrecording.php', $params);
+                        $grouprecordinghtml .= html_writer::div(
+                            html_writer::link($recordingurl, $recordingname),
+                            'recording-link'
+                        );
+                    }
+                }
+
+                if ($hasvisible && $firstrecording) {
+                    // Card header: method badge + date.
+                    $headerhtml = html_writer::tag('span', $groupmethod, ['class' => 'recording-method-badge']);
+                    if (!empty($groupdate)) {
+                        $headerhtml .= html_writer::tag('span', $groupdate, ['class' => 'recording-date']);
+                    }
+                    $itemhtml = html_writer::div($headerhtml, 'recording-item-header');
+
+                    // Card body: recording links + passcode.
+                    $bodyhtml = $grouprecordinghtml;
+                    if (!empty($grouppasscode)) {
+                        $passcodelabel = html_writer::tag('strong', get_string('recordingpasscode', 'mod_zoom') . ':');
+                        $passcodelabel .= ' ' . htmlspecialchars($grouppasscode);
+                        $bodyhtml .= html_writer::div($passcodelabel, 'recording-passcode');
+                    }
+                    $itemhtml .= html_writer::div($bodyhtml, 'recording-item-body');
+
+                    $recordinglisthtml .= html_writer::div($itemhtml, 'recording-item');
+                }
+            }
+
+            if (!empty($recordinglisthtml)) {
+                $recordinghtml .= html_writer::div($recordinglisthtml, 'recording-list');
+            } else {
+                $recordinghtml .= html_writer::div(get_string('norecordings', 'mod_zoom'), 'text-center');
+            }
+        } else {
+            $recordinghtml .= html_writer::div(get_string('norecordings', 'mod_zoom'), 'text-center');
+        }
+
+        // Show "管理录制" button for managers only.
+        if ($iszoommanager) {
+            $manageurl = new moodle_url('/mod/zoom/recordings.php', ['id' => $cm->id]);
+            $videoicon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:middle;margin-right:4px">'
+                       . '<path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>'
+                       . '</svg>';
+            $managebtn = html_writer::link($manageurl,
+                $videoicon . get_string('managerecordings', 'mod_zoom'),
+                ['class' => 'btn btn-primary']);
+            $recordinghtml .= html_writer::div($managebtn, 'mt-2');
+        }
 
         $rowrecordings = new html_table_row();
         $rowrecordings->id = 'zoom_schedule-recordings';
