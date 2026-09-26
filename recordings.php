@@ -165,7 +165,11 @@ if (empty($recordings)) {
                     }
                 }
 
-                $recordingname = trim($recording->name) . ' (' . zoom_get_recording_type_string($recording->recordingtype) . ')';
+                if ($recording->ismanual) {
+                    $recordingname = trim($recording->name);
+                } else {
+                    $recordingname = trim($recording->name) . ' (' . zoom_get_recording_type_string($recording->recordingtype) . ')';
+                }
                 $params = ['id' => $cm->id, 'recordingid' => $recording->id];
                 $recordingurl = new moodle_url('/mod/zoom/loadrecording.php', $params);
                 $recordinglink = html_writer::link($recordingurl, $recordingname);
