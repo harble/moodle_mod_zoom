@@ -745,23 +745,23 @@ function zoom_get_unavailability_note($zoom, $finished = null) {
             // If the admin wants to show the leadtime.
             if (!empty($config->displayleadtime) && $firstabletojoin > 0) {
                 $unavailabilitynote = $strunavailable . '<br />' . $joinpolicy .
-                    '<br />' . $joinwindow .
-                    '<br />' . $timediff;
+                    '<br /><span class="text-muted small">' . $joinwindow .
+                    '<br />' . $timediff . '</span>';
 
                 // Otherwise.
             } else {
                 $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablenotstartedyet', 'mod_zoom') .
-                    '<br />' . $joinpolicy .
+                    '<br /><span class="text-muted small">' . $joinpolicy .
                     '<br />' . $joinwindow .
-                    '<br />' . $timediff;
+                    '<br />' . $timediff . '</span>';
             }
 
             // Otherwise, the meeting has finished.
         } else {
             $unavailabilitynote = $strunavailable . '<br />' . get_string('unavailablefinished', 'mod_zoom') .
-                    '<br />' . $joinpolicy .
+                    '<br /><span class="text-muted small">' . $joinpolicy .
                     '<br />' . $joinwindow .
-                    '<br />' . $timediff;
+                    '<br />' . $timediff . '</span>';
         }
     }
 
