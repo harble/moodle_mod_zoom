@@ -327,8 +327,32 @@ function zoom_get_next_occurrence($zoom) {
 
             // If we haven't got a single event.
             if (empty($nextoccurrence)) {
-                // Use 0 as there isn't anything better to return.
-                $cachednextoccurrence = 0;
+                // The calendar events for this instance may be missing, e.g. right after
+                // the instance was duplicated/copied. Try to (re)build them from Zoom so
+                // a real future occurrence can be resolved through the normal path.
+                if (!empty($zoom->meeting_id) && function_exists('zoom_webservice') &&
+                        function_exists('populate_zoom_from_response') && function_exists('zoom_calendar_item_update')) {
+                    try {
+                        $response = zoom_webservice()->get_meeting_webinar_info($zoom->meeting_id, $zoom->webinar);
+                        $fullzoom = populate_zoom_from_response($zoom, $response);
+                        zoom_calendar_item_update($fullzoom);
+                        // Re-query now that the calendar events may have been recreated.
+                        $nextoccurrence = $DB->get_records_select('event', $selectclause, $selectparams, 'timestart ASC', 'timestart', 0, 1);
+                        if (!empty($nextoccurrence)) {
+                            $nextoccurenceobject = reset($nextoccurrence);
+                            $cachednextoccurrence = $nextoccurenceobject->timestart;
+                            $cache->set($zoom->id, $cachednextoccurrence);
+                            return $cachednextoccurrence;
+                        }
+                    } catch (\Exception $error) {
+                        // Ignore: fall through to the start time fallback below.
+                    }
+                }
+
+                // Fall back to the stored start time (first occurrence) to ensure the
+                // meeting is not misinterpreted as finished (epoch 0) when calendar
+                // events are missing.
+                $cachednextoccurrence = (int) $zoom->start_time;
             } else {
                 // Use the timestamp of the event.
                 $nextoccurenceobject = reset($nextoccurrence);
