@@ -93,6 +93,21 @@ function zoom_add_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) {
 
     $zoom->course = (int) $zoom->course;
 
+    // Handle external meeting URL. If we are only storing a link to an external
+    // meeting, skip all Zoom API calls so that no meeting is created on Zoom.
+    $isManual = !empty($zoom->meetingsource) && $zoom->meetingsource === 'manual';
+    if ($isManual) {
+        $zoom->manualmeeting = 1;
+        $zoom->meeting_url = trim($zoom->meeting_url ?? '');
+        // Always detect platform from URL server-side, overriding any JS-set value.
+        $zoom->externalplatform = zoom_detect_external_platform($zoom->meeting_url);
+        $zoom->id = $DB->insert_record('zoom', $zoom);
+        zoom_calendar_item_update($zoom);
+        zoom_grade_item_update($zoom);
+
+        return $zoom->id;
+    }
+
     $zoom->breakoutrooms = [];
     if (!empty($zoom->rooms)) {
         $breakoutrooms = zoom_build_instance_breakout_rooms_array_for_api($zoom);
@@ -129,24 +144,10 @@ function zoom_add_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) {
         $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
     }
 
-    // Handle external meeting URL.
-    $isManual = !empty($zoom->meetingsource) && $zoom->meetingsource === 'manual';
-    $zoom->manualmeeting = $isManual ? 1 : 0;
-    if ($isManual) {
-        $zoom->meeting_url = trim($zoom->meeting_url ?? '');
-        // Always detect platform from URL server-side, overriding any JS-set value.
-        $zoom->externalplatform = zoom_detect_external_platform($zoom->meeting_url);
-        $zoom->id = $DB->insert_record('zoom', $zoom);
-        zoom_calendar_item_update($zoom);
-        zoom_grade_item_update($zoom);
-
-        return $zoom->id;
-    } else {
-        // Ensure clean state when switching from manual back to auto.
-        $zoom->manualmeeting = 0;
-        $zoom->meeting_url = '';
-        $zoom->externalplatform = '';
-    }
+    // Ensure clean state (external/manual meetings already returned above).
+    $zoom->manualmeeting = 0;
+    $zoom->meeting_url = '';
+    $zoom->externalplatform = '';
 
     $zoom->id = $DB->insert_record('zoom', $zoom);
     if (!empty($zoom->breakoutrooms)) {
