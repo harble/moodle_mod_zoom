@@ -177,9 +177,13 @@ class mod_zoom_mod_form extends moodleform_mod {
 
         // Add description 'intro' and 'introformat'.
         $this->standard_intro_elements();
+        // Display the description on the course page by default.
+        $mform->setDefault('showdescription', 1);
 
         // Adding the "meeting source" fieldset, where users can choose between automatic Zoom creation or external link.
         $mform->addElement('header', 'meetingsourceheader', get_string('meetingsource', 'mod_zoom'));
+        // Keep the "meeting source" fieldset expanded by default.
+        $mform->setExpanded('meetingsourceheader');
 
         $meetingsourceoptions = [
             'auto' => get_string('meetingsource_auto', 'mod_zoom'),

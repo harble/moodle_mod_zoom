@@ -653,6 +653,14 @@ if ($zoom->show_security && !$isexternalmeeting) {
         $table->data[] = $rowpassword;
     }
 
+    // Show meeting ID.
+    $rowmeetingid = new html_table_row();
+    $rowmeetingid->id = 'zoom_security-meetingid';
+    $meetingidheader = new html_table_cell(get_string('meetingid', 'mod_zoom'));
+    $meetingidheader->header = true;
+    $rowmeetingid->cells = [$meetingidheader, $zoom->meeting_id];
+    $table->data[] = $rowmeetingid;
+
     // Show join link.
     if ($canviewjoinurl) {
         $rowjoinurl = new html_table_row();

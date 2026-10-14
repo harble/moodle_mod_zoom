@@ -132,6 +132,7 @@ $string['join_meeting'] = '加入会议';
 $string['joinbeforehost'] = '主持人前加入';
 $string['joinbeforehostenable'] = '允许参与者随时加入';
 $string['joinlink'] = '加入链接';
+$string['meetingid'] = '会议号';
 $string['jointime'] = '加入时间';
 $string['leavetime'] = '离开时间';
 $string['licensesettings'] = '许可证设置';

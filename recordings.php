@@ -142,8 +142,8 @@ if (empty($recordings)) {
                             ['class' => 'btn btn-danger btn-sm']);
 
                         $actionhtml = $retransmitbtn . ' ' . $deletebtn;
-                    } else {
-                        // Cloud recording: keep show/hide toggle.
+                    } else if (is_siteadmin()) {
+                        // Cloud recording: keep show/hide toggle (super admin only).
                         $isrecordinghidden = intval($recording->showrecording) === 0;
                         $urlparams = [
                             'id' => $cm->id,

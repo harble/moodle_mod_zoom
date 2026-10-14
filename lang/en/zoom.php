@@ -222,6 +222,7 @@ $string['join_meeting'] = 'Join Meeting';
 $string['joinbeforehost'] = 'Join meeting before host';
 $string['joinbeforehostenable'] = 'Allow participants to join anytime';
 $string['joinlink'] = 'Join link';
+$string['meetingid'] = 'Meeting ID';
 $string['jointime'] = 'Join time';
 $string['leavetime'] = 'Leave time';
 $string['licenseonjoin'] = 'Select this option if you would like the host to receive a license upon starting the meeting, <i>as well as</i> upon creation.';
