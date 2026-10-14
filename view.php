@@ -73,9 +73,13 @@ $userishost = ($userisrealhost || in_array($userapiidentifier, $alternativehosts
 
 // Get host user from Zoom.
 $showrecreate = false;
-if ($zoom->exists_on_zoom == ZOOM_MEETING_EXPIRED) {
+
+// External meetings (manual link) have no associated meeting on Zoom, so the
+// lookup below would always fail. Never show the "meeting not found" prompt.
+$isexternalmeeting = !empty($zoom->manualmeeting) && !empty($zoom->meeting_url);
+if (!$isexternalmeeting && $zoom->exists_on_zoom == ZOOM_MEETING_EXPIRED) {
     $showrecreate = true;
-} else {
+} else if (!$isexternalmeeting) {
     try {
         zoom_webservice()->get_meeting_webinar_info($zoom->meeting_id, $zoom->webinar);
     } catch (\mod_zoom\webservice_exception $error) {

@@ -101,6 +101,12 @@ function zoom_add_instance(stdClass $zoom, ?mod_zoom_mod_form $mform = null) {
         $zoom->meeting_url = trim($zoom->meeting_url ?? '');
         // Always detect platform from URL server-side, overriding any JS-set value.
         $zoom->externalplatform = zoom_detect_external_platform($zoom->meeting_url);
+        // Normalize array-typed form fields (e.g. the regionrestrictionlist
+        // autocomplete submits an array) before persisting the record.
+        $zoom->regionrestrictionenabled = !empty($zoom->regionrestrictionenabled) ? 1 : 0;
+        if (isset($zoom->regionrestrictionlist) && is_array($zoom->regionrestrictionlist)) {
+            $zoom->regionrestrictionlist = json_encode($zoom->regionrestrictionlist);
+        }
         $zoom->id = $DB->insert_record('zoom', $zoom);
         zoom_calendar_item_update($zoom);
         zoom_grade_item_update($zoom);
