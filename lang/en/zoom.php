@@ -337,6 +337,7 @@ $string['protectedgroups'] = 'Protect groups';
 $string['protectedgroups_desc'] = 'Select Zoom groups to protect member users from license redefining';
 $string['recording'] = 'Recording';
 $string['recordingadd'] = 'Add Recording';
+$string['uploaddate'] = 'Upload date';
 $string['recordingdate'] = 'Recording Date';
 $string['recordingmethod'] = 'Recording Method';
 $string['recordingmethod_cloud'] = 'Cloud Recording';

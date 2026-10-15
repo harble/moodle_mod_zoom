@@ -88,8 +88,8 @@ class mod_zoom_upload_recording_form extends moodleform {
             $mform->setDefault('name', $recording->name);
         }
 
-        // Recording date.
-        $mform->addElement('date_time_selector', 'recordingstart', get_string('recordingdate', 'mod_zoom'));
+        // Recording date (upload date).
+        $mform->addElement('date_time_selector', 'recordingstart', get_string('uploaddate', 'mod_zoom'));
         $mform->addRule('recordingstart', null, 'required', null, 'client');
         $defaulttime = time();
         if ($recording) {
@@ -103,14 +103,6 @@ class mod_zoom_upload_recording_form extends moodleform {
         $mform->addElement('filepicker', 'recordingfile', get_string('recordingfile', 'mod_zoom'), null,
             ['maxbytes' => $maxbytes, 'maxfiles' => $maxfiles, 'accepted_types' => '*']);
         $mform->addRule('recordingfile', null, 'required', null, 'client');
-
-        // Passcode (optional).
-        $mform->addElement('text', 'passcode', get_string('recordingpasscode', 'mod_zoom'), 'maxlength="30" size="20"');
-        $mform->setType('passcode', PARAM_TEXT);
-        $mform->addHelpButton('passcode', 'recordingpasscode', 'mod_zoom');
-        if ($recording) {
-            $mform->setDefault('passcode', $recording->passcode);
-        }
 
         // Visible by default.
         $mform->addElement('selectyesno', 'showrecording', get_string('recordingvisibility', 'mod_zoom'));
@@ -149,7 +141,6 @@ if ($mform->is_cancelled()) {
     $record->zoomid = $zoom->id;
     $record->name = $data->name;
     $record->recordingstart = $data->recordingstart;
-    $record->passcode = !empty($data->passcode) ? $data->passcode : '';
     $record->showrecording = $data->showrecording;
     $record->ismanual = 1;
     $record->recordingtype = 'manual';

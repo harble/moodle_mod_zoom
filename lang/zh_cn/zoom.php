@@ -193,6 +193,7 @@ $string['pluginname'] = 'Zoom 会议';
 $string['protectedgroups'] = '受保护分组';
 $string['recording'] = '录制';
 $string['recordingadd'] = '添加录制';
+$string['uploaddate'] = '上传日期';
 $string['recordingdate'] = '录制日期';
 $string['recordingmethod'] = '录制方式';
 $string['recordingmethod_cloud'] = '云录制';
