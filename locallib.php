@@ -1339,6 +1339,112 @@ function zoom_get_meeting_recordings_grouped($zoomid = null) {
 }
 
 /**
+ * Render the list of recording cards for a given Zoom instance, mirroring the
+ * inline recordings display of the schedule table on view.php.
+ *
+ * @param int $zoomid The Zoom instance id.
+ * @param int $cmid The course module id.
+ * @param bool $iszoommanager Whether the current user manages recordings.
+ * @return string
+ */
+function zoom_render_recordings_cards($zoomid, $cmid, $iszoommanager = false) {
+    $recordinghtml = '';
+
+    // Load recordings for inline display.
+    $recordinggroups = zoom_get_meeting_recordings_grouped($zoomid);
+
+    if (!empty($recordinggroups)) {
+        $recordinglisthtml = '';
+        foreach ($recordinggroups as $grouping) {
+            $grouprecordinghtml = '';
+            $groupmethod = '';
+            $groupdate = '';
+            $grouppasscode = '';
+            $hasvisible = false;
+            $firstrecording = null;
+
+            foreach ($grouping as $recording) {
+                if ($iszoommanager || intval($recording->showrecording) === 1) {
+                    $hasvisible = true;
+                    if ($firstrecording === null) {
+                        $firstrecording = $recording;
+                    }
+
+                    if (empty($groupdate)) {
+                        $groupdate = date('Y/m/d H:i', $recording->recordingstart);
+                    }
+                    if (empty($grouppasscode)) {
+                        $grouppasscode = $recording->passcode;
+                    }
+                    if (empty($groupmethod)) {
+                        if ($recording->ismanual) {
+                            $groupmethod = get_string('recordingmethod_manual', 'mod_zoom');
+                        } else {
+                            $groupmethod = get_string('recordingmethod_cloud', 'mod_zoom');
+                        }
+                    }
+
+                    // Build recording link.
+                    if ($recording->ismanual) {
+                        $recordingname = trim($recording->name);
+                    } else {
+                        $recordingname = trim($recording->name) . ' (' . zoom_get_recording_type_string($recording->recordingtype) . ')';
+                    }
+                    $params = ['id' => $cmid, 'recordingid' => $recording->id];
+                    $recordingurl = new moodle_url('/mod/zoom/loadrecording.php', $params);
+                    $grouprecordinghtml .= html_writer::div(
+                        html_writer::link($recordingurl, $recordingname),
+                        'recording-link'
+                    );
+                }
+            }
+
+            if ($hasvisible && $firstrecording) {
+                // Card header: method icon + date (right side).
+                $headerhtml = '';
+                if ($firstrecording->ismanual) {
+                    $methodicon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" title="' . get_string('recordingmethod_manual', 'mod_zoom') . '">'
+                                 . '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+                                 . '<polygon points="10,8 16,12 10,16" fill="currentColor" stroke="currentColor" stroke-width="0.5"/>'
+                                 . '</svg>';
+                } else {
+                    $methodicon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" title="' . get_string('recordingmethod_cloud', 'mod_zoom') . '">'
+                                 . '<path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+                                 . '</svg>';
+                }
+                $iconhtml = '';
+                $iconhtml .= html_writer::tag('span', $methodicon, ['class' => 'recording-method-icon']);
+                if (!empty($groupdate)) {
+                    $iconhtml .= html_writer::tag('span', $groupdate, ['class' => 'recording-date']);
+                }
+                $methodlabel = $firstrecording->ismanual ?
+                    get_string('recording_method_label_manual', 'mod_zoom') :
+                    get_string('recording_method_label_cloud', 'mod_zoom');
+                $iconhtml .= html_writer::tag('span', $methodlabel, ['class' => 'recording-method-label', 'style' => 'margin-left:8px;']);
+                $headerhtml .= html_writer::tag('span', $iconhtml, ['style' => 'white-space:nowrap;display:inline-flex;align-items:center;', 'title' => $groupmethod]);
+                if (!empty($grouppasscode)) {
+                    $passcodelabel = html_writer::tag('strong', get_string('recordingpasscode', 'mod_zoom') . ':');
+                    $passcodelabel .= ' ' . htmlspecialchars($grouppasscode);
+                    $headerhtml .= html_writer::tag('span', $passcodelabel, ['class' => 'recording-passcode-header']);
+                }
+                $itemhtml = html_writer::div($headerhtml, 'recording-item-header');
+
+                // Card body: recording links.
+                $itemhtml .= html_writer::div($grouprecordinghtml, 'recording-item-body');
+
+                $recordinglisthtml .= html_writer::div($itemhtml, 'recording-item');
+            }
+        }
+
+        if (!empty($recordinglisthtml)) {
+            $recordinghtml .= html_writer::div($recordinglisthtml, 'recording-list');
+        }
+    }
+
+    return $recordinghtml;
+}
+
+/**
  * Get the display name for a Zoom recording type.
  *
  * @package mod_zoom

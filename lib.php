@@ -1416,7 +1416,7 @@ function zoom_get_coursemodule_info($coursemodule) {
     global $DB;
 
     $dbparams = ['id' => $coursemodule->instance];
-    $fields = 'id, intro, introformat, start_time, recurring, recurrence_type, duration';
+    $fields = 'id, intro, introformat, start_time, recurring, recurrence_type, duration, meeting_id, join_url, meeting_url, webinar';
     if (!$zoom = $DB->get_record('zoom', $dbparams, $fields)) {
         return false;
     }
@@ -1426,6 +1426,111 @@ function zoom_get_coursemodule_info($coursemodule) {
     if ($coursemodule->showdescription) {
         // Convert intro to html. Do not filter cached version, filters run at display time.
         $result->content = format_module_intro('zoom', $zoom, $coursemodule->id, false);
+
+        // Append a schedule-like summary below the intro, mirroring the schedule
+        // table shown on view.php (start time, duration, recordings and join).
+        require_once(__DIR__ . '/locallib.php');
+
+        $config = get_config('zoom');
+
+        [, $available, $finished] = zoom_get_state($zoom);
+
+        $isrecurringnotime = !empty($zoom->recurring) && (int)$zoom->recurrence_type === ZOOM_RECURRINGTYPE_NOTIME;
+        $isexternalmeeting = !empty($zoom->meeting_url);
+
+        $table = new html_table();
+        $table->attributes['class'] = 'generaltable mod_view zoom-section-table zoom-coursemodule-info';
+        $table->attributes['style'] = 'margin-top:5px;';
+        $table->align = ['left', 'left'];
+        $table->size = ['26%', '74%'];
+
+        // Start time row (format: year/month/day hour:minute).
+        $rowmeetingtime = new html_table_row();
+        $meetingtimeheader = new html_table_cell(get_string('starttime', 'mod_zoom'));
+        $meetingtimeheader->header = true;
+        $meetingtimetext = new html_table_cell();
+        if ($isrecurringnotime) {
+            $meetingtimetext->text = get_string('recurringmeetingexplanation', 'mod_zoom');
+        } else {
+            $meetingtimetext->text = date('Y/m/d H:i', $zoom->start_time);
+        }
+        $rowmeetingtime->cells = [$meetingtimeheader, $meetingtimetext];
+        $table->data[] = $rowmeetingtime;
+
+        // Duration row.
+        if (!$isrecurringnotime) {
+            $rowduration = new html_table_row();
+            $durationheader = new html_table_cell(get_string('duration_short', 'mod_zoom'));
+            $durationheader->header = true;
+            $rowduration->cells = [$durationheader, format_time($zoom->duration)];
+            $table->data[] = $rowduration;
+        }
+
+        // Recordings: a single merged column showing only the recording list. Only
+        // recordings the admins have made visible (showrecording = 1) are shown,
+        // because this content is cached and shared across all users.
+        if (isset($config->viewrecordings) && !empty($config->viewrecordings)) {
+            $recordingcards = zoom_render_recordings_cards($zoom->id, $coursemodule->id, false);
+            if ($recordingcards !== '') {
+                $recordingcell = new html_table_cell($recordingcards);
+                $recordingcell->colspan = 2;
+                $recordingcell->attributes['class'] = 'text-center';
+                $rowrecordings = new html_table_row();
+                $rowrecordings->cells = [$recordingcell];
+                $table->data[] = $rowrecordings;
+            }
+        }
+
+        // Join: a single merged, centered column. The join button and the copy link
+        // are shown inline on one row with a 12px gap between them.
+        $rowjoin = new html_table_row();
+        $joincell = new html_table_cell();
+        $joincell->colspan = 2;
+        $joincell->attributes['class'] = 'text-center';
+        if ($available) {
+            $buttonattr = ['type' => 'submit', 'class' => 'btn btn-primary'];
+            $buttonhtml = html_writer::tag('button', get_string('join_meeting', 'mod_zoom'), $buttonattr);
+            $aurl = new moodle_url('/mod/zoom/loadmeeting.php', ['id' => $coursemodule->id]);
+            $buttonhtml .= html_writer::input_hidden_params($aurl);
+            $formattr = ['action' => $aurl->out_omit_querystring(), 'target' => '_blank',
+                         'style' => 'display:inline-block;margin:0 12px 0 0;vertical-align:bottom;'];
+            $joincell->text = html_writer::tag('form', $buttonhtml, $formattr);
+
+            // Add a "copy meeting link" link next to the join button.
+            $copyurl = '';
+            if ($isexternalmeeting) {
+                $copyurl = $zoom->meeting_url;
+            } else if (!empty($zoom->join_url)) {
+                $copyurl = $zoom->join_url;
+            }
+            if (!empty($copyurl)) {
+                $copylink = html_writer::link('#', get_string('copymeetinglink', 'mod_zoom'),
+                    ['class' => 'zoom-copy-link',
+                     'style' => 'color:#5a5a5a;font-size:0.95em;text-decoration:none;vertical-align:bottom;',
+                     'data-clipboard' => $copyurl]);
+                $joincell->text .= $copylink;
+            }
+        } else {
+            $note = zoom_get_unavailability_note($zoom, $finished);
+            // Convert the (HTML) note to plain text so the native title tooltip
+            // shows readable text with line breaks (no escaped HTML tags).
+            $plainnote = preg_replace('/<br\s*\/?>/i', "\n", $note);
+            $plainnote = strip_tags($plainnote);
+            $disabledbtn = html_writer::tag('button', get_string('coursemodule_cannotjoin', 'mod_zoom'),
+                ['type' => 'button', 'class' => 'btn btn-primary', 'disabled' => 'disabled']);
+            // Wrap the disabled button so the native title tooltip still fires.
+            $joincell->text = html_writer::tag('span', $disabledbtn,
+                ['class' => 'zoom-cannotjoin-wrap', 'title' => trim($plainnote)]);
+        }
+        $rowjoin->cells = [$joincell];
+        $table->data[] = $rowjoin;
+
+        $result->content .= html_writer::table($table);
+        $result->content .= html_writer::script(
+            'document.addEventListener("click",function(e){var t=e.target.closest(".zoom-copy-link");if(t){e.preventDefault();' .
+            '(navigator.clipboard?navigator.clipboard.writeText(t.getAttribute("data-clipboard")).then(function(){var o=t.textContent;t.textContent="✓";setTimeout(function(){t.textContent=o;},1500);}):' .
+            '(function(){var i=document.createElement("textarea");i.value=t.getAttribute("data-clipboard");document.body.appendChild(i);i.select();document.execCommand("copy");document.body.removeChild(i);})());}});'
+        );
     }
 
     // Populate some other values that can be used in calendar or on dashboard.
