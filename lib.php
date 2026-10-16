@@ -1520,16 +1520,22 @@ function zoom_get_coursemodule_info($coursemodule) {
                 ['type' => 'button', 'class' => 'btn btn-primary', 'disabled' => 'disabled']);
             // Wrap the disabled button so the native title tooltip still fires.
             $joincell->text = html_writer::tag('span', $disabledbtn,
-                ['class' => 'zoom-cannotjoin-wrap', 'title' => trim($plainnote)]);
+                ['class' => 'zoom-cannotjoin-wrap', 'title' => trim($plainnote),
+                 'data-note' => trim($plainnote), 'role' => 'button']);
         }
         $rowjoin->cells = [$joincell];
         $table->data[] = $rowjoin;
 
         $result->content .= html_writer::table($table);
         $result->content .= html_writer::script(
-            'document.addEventListener("click",function(e){var t=e.target.closest(".zoom-copy-link");if(t){e.preventDefault();' .
+            'if(!window.__zoomCourseInfoHandlers){window.__zoomCourseInfoHandlers=true;' .
+            'document.addEventListener("click",function(e){' .
+            'var t=e.target.closest(".zoom-copy-link");if(t){e.preventDefault();' .
             '(navigator.clipboard?navigator.clipboard.writeText(t.getAttribute("data-clipboard")).then(function(){var o=t.textContent;t.textContent="✓";setTimeout(function(){t.textContent=o;},1500);}):' .
-            '(function(){var i=document.createElement("textarea");i.value=t.getAttribute("data-clipboard");document.body.appendChild(i);i.select();document.execCommand("copy");document.body.removeChild(i);})());}});'
+            '(function(){var i=document.createElement("textarea");i.value=t.getAttribute("data-clipboard");document.body.appendChild(i);i.select();document.execCommand("copy");document.body.removeChild(i);})());return;}' .
+            'var c=e.target.closest(".zoom-cannotjoin-wrap");' .
+            'if(c){var n=c.getAttribute("data-note")||"";var d=document.createElement("div");d.innerHTML=n;alert(d.textContent);}' .
+            '});}'
         );
     }
 
