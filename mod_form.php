@@ -127,7 +127,10 @@ class mod_zoom_mod_form extends moodleform_mod {
             }
         }
 
-        if (!$isnew) {
+        // External meetings (manual link) have no associated meeting on Zoom, so
+        // the lookup below would always fail. Never show the "meeting not found" prompt.
+        $isexternalmeeting = !empty($this->current->manualmeeting) && !empty($this->current->meeting_url);
+        if (!$isnew && !$isexternalmeeting) {
             try {
                 zoom_webservice()->get_meeting_webinar_info($this->current->meeting_id, $this->current->webinar);
             } catch (\mod_zoom\webservice_exception $error) {
